@@ -1,0 +1,66 @@
+{% extends "admin_base.html" %}
+{% block title %}Instagram{% endblock %}
+{% block content %}
+  <h1>Seguinos en Instagram</h1>
+  <p class="subtitle">Subí capturas de posteos o reels reales de <strong>{{ instagram_url }}</strong> — aparecen en fila en la home, como una vidriera de tu Instagram. Si dejás el link de un posteo vacío, al tocarlo lleva directo a tu perfil.</p>
+
+  {% for p in posts %}
+  <div class="card">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <img src="{{ p.image_url }}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;background:#eee;flex-shrink:0;">
+      <form method="post" action="{{ url_for('admin_edit_instagram_post', post_id=p.id) }}" enctype="multipart/form-data" style="flex:1;min-width:260px;">
+        <div class="form-group">
+          <label>Link al posteo (opcional)</label>
+          <input type="text" name="link" value="{{ p.link or '' }}" placeholder="Ej: https://instagram.com/p/xxxxx">
+        </div>
+        <div class="form-group">
+          <label>Reemplazar captura (opcional)</label>
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="active" style="width:auto;" {% if p.active %}checked{% endif %}>
+          <label style="margin:0;">Visible en la home</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="submit">Guardar</button>
+        </div>
+      </form>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <form method="post" action="{{ url_for('admin_move_instagram_post', post_id=p.id) }}">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.first %}disabled{% endif %}>&uarr; Subir</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_move_instagram_post', post_id=p.id) }}">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.last %}disabled{% endif %}>&darr; Bajar</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_delete_instagram_post', post_id=p.id) }}"
+              onsubmit="return confirm('¿Eliminar esta captura?');">
+          <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:var(--color-muted);">Todavía no cargaste ninguna captura. La sección no se muestra en la home hasta que cargues al menos una.</div>
+  {% endfor %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Agregar captura nueva</h3>
+    <form method="post" action="{{ url_for('admin_add_instagram_post') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Captura del posteo o reel (sacale una foto a la pantalla o descargá la imagen desde Instagram)</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif" required>
+      </div>
+      <div class="form-group">
+        <label>Link al posteo (opcional)</label>
+        <input type="text" name="link" placeholder="Ej: https://instagram.com/p/xxxxx">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="active" checked style="width:auto;">
+        <label style="margin:0;">Visible en la home</label>
+      </div>
+      <button class="btn" type="submit">Agregar captura</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1>Productos</h1>
+      <p class="subtitle">{{ products|length }} producto(s) cargado(s)</p>
+    </div>
+    <a class="btn" href="{{ url_for('admin_new_product') }}">+ Nuevo producto</a>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Foto</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><img class="thumb" src="{{ p.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" alt=""></td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.category }}</td>
+          <td>
+            {% if p.discount_percent %}
+              <span style="text-decoration:line-through;color:#a49b95;">${{ "%.2f"|format(p.price) }}</span><br>
+              <strong style="color:#6b4f3f;">${{ "%.2f"|format(p.price * (1 - p.discount_percent / 100)) }}</strong>
+              <span style="font-size:0.75rem;color:#6b4f3f;">(-{{ p.discount_percent|int }}%)</span>
+            {% else %}
+              ${{ "%.2f"|format(p.price) }}
+            {% endif %}
+          </td>
+          <td>
+            {{ p.stock }}
+            {% if p.color_count %}
+              <span style="font-size:0.72rem;color:var(--color-muted);">({{ p.color_count }} color{{ "es" if p.color_count != 1 }})</span>
+            {% elif p.size_count %}
+              <span style="font-size:0.72rem;color:var(--color-muted);">({{ p.size_count }} talle{{ "s" if p.size_count != 1 }})</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.active %}<span class="badge badge-on">Activo</span>
+            {% else %}<span class="badge badge-off">Pausado</span>{% endif %}
+          </td>
+          <td class="actions">
+            <a class="btn btn-outline btn-sm" href="{{ url_for('admin_edit_product', product_id=p.id) }}">Editar</a>
+            <a class="btn btn-outline btn-sm" href="{{ url_for('admin_product_colors', product_id=p.id) }}">Colores</a>
+            <a class="btn btn-outline btn-sm" href="{{ url_for('admin_product_sizes', product_id=p.id) }}">Talles</a>
+            <form method="post" action="{{ url_for('admin_toggle_product', product_id=p.id) }}">
+              <button class="btn btn-outline btn-sm" type="submit">{{ "Sacar del catálogo" if p.active else "Reactivar" }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_delete_product', product_id=p.id) }}"
+                  onsubmit="return confirm('¿Eliminar {{ p.name }}? Esta acción no se puede deshacer.');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:#8a7a6c;padding:24px;">Todavía no cargaste productos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

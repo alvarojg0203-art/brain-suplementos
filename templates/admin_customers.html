@@ -1,0 +1,70 @@
+{% extends "admin_base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+  <h1>Clientes</h1>
+  <p class="subtitle">{{ customers|length }} cliente(s) registrado(s){% if q %} · resultados para "{{ q }}"{% endif %}</p>
+
+  <form method="get" action="{{ url_for('admin_customers') }}" class="date-range-form">
+    <div class="form-group" style="flex:1;min-width:220px;">
+      <label>Buscar por nombre, email o teléfono</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Ej: Agustín, agustin@mail.com, 3865...">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar</button>
+    {% if q %}<a href="{{ url_for('admin_customers') }}" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+  </form>
+
+  {% if customers %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Contacto</th>
+          <th>Dirección</th>
+          <th>Cómo se registró</th>
+          <th>Fecha</th>
+          <th>Pedidos</th>
+          <th>Exclusivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td>
+            <strong>{{ c.name }}</strong>
+            {% if c.is_exclusive %}<br><span class="badge badge-on" title="Tiene {{ c.discount_percent|int }}% de descuento automático en Caja">⭐ Exclusivo · {{ c.discount_percent|int }}%</span>{% endif %}
+          </td>
+          <td>
+            {{ c.email }}
+            {% if c.phone %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ c.phone }}</span>{% endif %}
+          </td>
+          <td>{{ c.address or "—" }}</td>
+          <td>
+            {% if c.auth_provider == "google" %}<span class="badge badge-on">Google</span>
+            {% elif c.auth_provider == "apple" %}<span class="badge badge-on">Apple</span>
+            {% else %}<span class="badge badge-off">Email y contraseña</span>{% endif %}
+          </td>
+          <td style="white-space:nowrap;">{{ c.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>{{ c.order_count }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_update_customer_exclusive', customer_id=c.id) }}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <input type="hidden" name="q" value="{{ q }}">
+              <label style="display:flex;align-items:center;gap:4px;font-weight:400;font-size:0.8rem;margin:0;">
+                <input type="checkbox" name="is_exclusive" value="1" style="width:auto;" {% if c.is_exclusive %}checked{% endif %}>
+                Exclusivo
+              </label>
+              <input type="number" name="discount_percent" min="0" max="100" step="1" value="{{ c.discount_percent|int }}" placeholder="%" style="width:60px;padding:5px 6px;font-size:0.8rem;" title="% de descuento automático en Caja">
+              <button class="btn btn-outline btn-sm" type="submit">Guardar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    {% if q %}No encontramos ningún cliente para "{{ q }}".{% else %}Todavía no se registró ningún cliente.{% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

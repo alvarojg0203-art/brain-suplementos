@@ -1,0 +1,301 @@
+{% extends "admin_base.html" %}
+{% block title %}Nueva venta{% endblock %}
+{% block content %}
+  <h1>Nueva venta presencial</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_caja') }}">&larr; Volver a Caja</a></p>
+
+  <div class="pos-layout">
+    <div class="pos-search-col">
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Buscar producto</h3>
+        <div class="form-group" style="margin-bottom:10px;">
+          <input type="text" id="posSearchInput" placeholder="Nombre del producto, o escaneá el código de barras..."
+                 oninput="posSearchDebounced()" onkeydown="posSearchKeydown(event)" autocomplete="off" autofocus>
+          <p style="font-size:0.76rem;color:#8a7a6c;margin-top:6px;">Mostrando todos los productos activos. Escribí para filtrar por nombre, o escaneá un código de barras (agrega el producto directo).</p>
+        </div>
+        <div class="pos-search-results" id="posResults">
+          <p class="pos-empty">Cargando productos...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pos-cart-col">
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Venta actual</h3>
+        <div id="posCart">
+          <p class="pos-empty">Todavía no agregaste ningún producto.</p>
+        </div>
+        <div class="pos-total">
+          <span>Total</span>
+          <span id="posTotal">$0</span>
+        </div>
+
+        <div class="form-group" style="margin-top:18px;">
+          <label>Medio de pago</label>
+          <select id="posPaymentMethod">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta de débito">Tarjeta de débito</option>
+            <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Mercado Pago">Mercado Pago (QR/otro)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cliente (opcional)</label>
+          <input type="text" id="posCustomerName" placeholder="Ej: María Pérez">
+        </div>
+
+        <button class="btn" style="width:100%;" onclick="posSubmitSale()" id="posSubmitBtn">Confirmar venta e imprimir ticket</button>
+        <p class="pos-empty" id="posError" style="color:#b34747;display:none;"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // El propio HTML ya trae la lista de productos activos calculada por
+    // el servidor (ver admin_nueva_venta en app.py), así que la pantalla
+    // se puede pintar de una sola vez, sin esperar a un fetch aparte.
+    const POS_INITIAL_PRODUCTS = {{ initial_products | tojson }};
+
+    let posCart = [];
+    let posSearchTimer = null;
+
+    function posSearchDebounced(){
+      clearTimeout(posSearchTimer);
+      posSearchTimer = setTimeout(posSearch, 300);
+    }
+
+    // Al cargar la página ya tenemos los productos activos (vinieron
+    // adentro del HTML), así que se muestran de inmediato. Solo si algo
+    // saliera mal con esos datos, se pide la lista de nuevo por fetch.
+    if(Array.isArray(POS_INITIAL_PRODUCTS) && POS_INITIAL_PRODUCTS.length){
+      posRenderResults(POS_INITIAL_PRODUCTS);
+    } else {
+      posLoadAll();
+    }
+
+    async function posLoadAll(){
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Cargando productos...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar`);
+        posRenderResults(await res.json());
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo cargar el catálogo. Probá de nuevo.</p>`;
+      }
+    }
+
+    async function posSearch(){
+      const q = document.getElementById("posSearchInput").value.trim();
+      if(!q){ posLoadAll(); return; }
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Buscando...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        posRenderResults(data);
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo buscar. Probá de nuevo.</p>`;
+      }
+    }
+
+    // Enter en el buscador = escaneo de código de barras: la lectora
+    // "escribe" el código y manda Enter solita. Probamos primero un
+    // match exacto de código de barras; si no hay ninguno, lo tratamos
+    // como una búsqueda normal por si lo escribió a mano.
+    function posSearchKeydown(event){
+      if(event.key !== "Enter") return;
+      event.preventDefault();
+      posScan();
+    }
+
+    async function posScan(){
+      const input = document.getElementById("posSearchInput");
+      const value = input.value.trim();
+      if(!value) return;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?codigo=${encodeURIComponent(value)}`);
+        const data = await res.json();
+        if(data.length === 1){
+          posQuickAdd(data[0]);
+          input.value = "";
+          posLoadAll();
+          input.focus();
+          return;
+        }
+      }catch(err){ /* seguimos al fallback de búsqueda por nombre */ }
+      posSearch();
+    }
+
+    // Se usa al escanear un código: si el producto no tiene sabor/peso
+    // se agrega directo, y si tiene, se muestra el picker para elegir.
+    function posQuickAdd(product){
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+      } else {
+        window._posProducts = [product];
+        posRenderResults([product]);
+        posToggleVariant(0);
+      }
+    }
+
+    function posRenderResults(products){
+      const results = document.getElementById("posResults");
+      if(!products.length){
+        results.innerHTML = `<p class="pos-empty">No se encontró ningún producto activo con ese nombre.</p>`;
+        return;
+      }
+      results.innerHTML = products.map((p, i) => `
+        <div>
+          <div class="pos-search-item" onclick="posToggleVariant(${i})">
+            <img src="${p.image_url || 'https://placehold.co/80x100/eee/999?text=%20'}" alt="">
+            <div class="psi-info">
+              <div class="psi-name">${p.name}</div>
+              <div class="psi-meta">${formatMoney(p.price)} · stock ${p.stock}${p.colors.length ? " (elegí sabor)" : ""}</div>
+            </div>
+          </div>
+          <div id="posVariant${i}"></div>
+        </div>
+      `).join("");
+      window._posProducts = products;
+    }
+
+    function posToggleVariant(i){
+      const product = window._posProducts[i];
+      const box = document.getElementById(`posVariant${i}`);
+      if(box.innerHTML){ box.innerHTML = ""; return; }
+
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+        box.innerHTML = "";
+        return;
+      }
+
+      const flavorOptions = product.colors.map(c => `<option value="${c.id}">${c.name} (stock ${c.stock})</option>`).join("");
+      const weightOptions = product.sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+      box.innerHTML = `
+        <div class="pos-variant-picker">
+          ${product.colors.length ? `<select id="posFlavor${i}" onchange="posUpdateWeightsForFlavor(${i})">${flavorOptions}</select>` : ""}
+          <select id="posWeight${i}">${weightOptions}</select>
+          <button class="btn btn-outline btn-sm" onclick="posConfirmVariant(${i})">Agregar</button>
+        </div>
+      `;
+      if(product.colors.length) posUpdateWeightsForFlavor(i);
+    }
+
+    // Si el sabor elegido tiene sus propios pesos (stock por combinación
+    // sabor+peso), el selector de peso pasa a mostrar esos en vez de los
+    // pesos generales del producto.
+    function posUpdateWeightsForFlavor(i){
+      const product = window._posProducts[i];
+      const flavorSelect = document.getElementById(`posFlavor${i}`);
+      const weightSelect = document.getElementById(`posWeight${i}`);
+      if(!flavorSelect || !weightSelect) return;
+      const sabor = product.colors.find(c => String(c.id) === flavorSelect.value);
+      const sizes = (sabor && sabor.sizes && sabor.sizes.length) ? sabor.sizes : product.sizes;
+      weightSelect.innerHTML = sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+    }
+
+    function posConfirmVariant(i){
+      const product = window._posProducts[i];
+      const flavorSelect = document.getElementById(`posFlavor${i}`);
+      const weightSelect = document.getElementById(`posWeight${i}`);
+      const sabor = flavorSelect ? product.colors.find(c => String(c.id) === flavorSelect.value) : null;
+      const weightList = (sabor && sabor.sizes && sabor.sizes.length) ? sabor.sizes : product.sizes;
+      const size = (weightSelect && weightList.length) ? weightList.find(s => String(s.id) === weightSelect.value) : null;
+      posAddToCart(product, sabor, size);
+      document.getElementById(`posVariant${i}`).innerHTML = "";
+    }
+
+    function posAddToCart(product, sabor, size){
+      const existing = posCart.find(it =>
+        it.product_id === product.id && it.flavor_id === (sabor ? sabor.id : null) && it.weight_id === (size ? size.id : null)
+      );
+      if(existing){ existing.qty += 1; }
+      else{
+        posCart.push({
+          product_id: product.id, name: product.name, unit_price: product.price, qty: 1,
+          flavor_id: sabor ? sabor.id : null, flavor_name: sabor ? sabor.name : null,
+          weight_id: size ? size.id : null, weight_label: size ? size.name : null,
+        });
+      }
+      posRenderCart();
+    }
+
+    function posChangeQty(index, delta){
+      posCart[index].qty += delta;
+      if(posCart[index].qty <= 0) posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    function posRemove(index){
+      posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    function posRenderCart(){
+      const box = document.getElementById("posCart");
+      if(!posCart.length){
+        box.innerHTML = `<p class="pos-empty">Todavía no agregaste ningún producto.</p>`;
+      } else {
+        box.innerHTML = posCart.map((it, i) => `
+          <div class="pos-cart-item">
+            <div class="pci-info">
+              <div>${it.name}</div>
+              ${(it.flavor_name || it.weight_label) ? `<div class="pci-variant">${[it.flavor_name, it.weight_label ? "Peso " + it.weight_label : null].filter(Boolean).join(" · ")}</div>` : ""}
+              <button class="pci-remove" onclick="posRemove(${i})">Quitar</button>
+            </div>
+            <div class="pci-qty">
+              <button type="button" onclick="posChangeQty(${i}, -1)">-</button>
+              <span>${it.qty}</span>
+              <button type="button" onclick="posChangeQty(${i}, 1)">+</button>
+            </div>
+            <div class="pci-price">${formatMoney(it.unit_price * it.qty)}</div>
+          </div>
+        `).join("");
+      }
+      const total = posCart.reduce((sum, it) => sum + it.unit_price * it.qty, 0);
+      document.getElementById("posTotal").textContent = formatMoney(total);
+    }
+
+    function formatMoney(n){ return "$" + Number(n).toLocaleString("es-AR"); }
+
+    async function posSubmitSale(){
+      const errorEl = document.getElementById("posError");
+      errorEl.style.display = "none";
+      if(!posCart.length){
+        errorEl.textContent = "Agregá al menos un producto.";
+        errorEl.style.display = "block";
+        return;
+      }
+      const btn = document.getElementById("posSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+      try{
+        const res = await fetch(window.location.pathname, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            items: posCart,
+            payment_method: document.getElementById("posPaymentMethod").value,
+            customer_name: document.getElementById("posCustomerName").value,
+          }),
+        });
+        const data = await res.json();
+        if(!res.ok || data.error){
+          errorEl.textContent = data.error || "No se pudo registrar la venta.";
+          errorEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Confirmar venta e imprimir ticket";
+          return;
+        }
+        window.location.href = `/admin/caja/venta/${data.sale_id}/ticket`;
+      }catch(err){
+        errorEl.textContent = "No se pudo conectar con el servidor.";
+        errorEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Confirmar venta e imprimir ticket";
+      }
+    }
+  </script>
+{% endblock %}

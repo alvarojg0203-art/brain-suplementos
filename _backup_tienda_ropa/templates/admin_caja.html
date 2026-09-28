@@ -1,0 +1,138 @@
+{% extends "admin_base.html" %}
+{% block title %}Caja{% endblock %}
+{% block content %}
+  <h1>Caja</h1>
+  <p class="subtitle">Ventas presenciales en el local, aparte de las que llegan por la tienda online. Para vender primero hay que abrir la caja.</p>
+
+  {% if not register %}
+  <div class="card" style="max-width:420px;">
+    <h3 style="margin-bottom:14px;">Abrir caja</h3>
+    <form method="post" action="{{ url_for('admin_abrir_caja') }}">
+      <div class="form-group">
+        <label>Monto inicial (el efectivo con el que arrancás)</label>
+        <input type="number" name="opening_amount" min="0" step="0.01" value="0" required>
+      </div>
+      <button class="btn" type="submit">Abrir caja</button>
+    </form>
+  </div>
+  {% else %}
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <div>
+        <span class="badge badge-on">Caja abierta</span>
+        <span class="subtitle" style="margin-left:8px;">Desde {{ register.opened_at.strftime('%d/%m/%Y %H:%M') }}</span>
+      </div>
+      <div class="actions">
+        {% if sales or expenses %}
+        <a class="btn btn-outline btn-sm" href="{{ url_for('admin_export_caja') }}">⬇ Exportar a PDF</a>
+        {% endif %}
+        <a class="btn btn-outline btn-sm" href="{{ url_for('admin_nueva_venta') }}">+ Nueva venta</a>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px;">
+      <div><span class="subtitle" style="margin:0;">Monto inicial</span><br><strong>${{ "%.2f"|format(register.opening_amount) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Ventas en efectivo</span><br><strong>${{ "%.2f"|format(totals.ventas_efectivo) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Ventas con otro medio</span><br><strong>${{ "%.2f"|format(totals.ventas_otras) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Gastos</span><br><strong>${{ "%.2f"|format(totals.gastos) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Efectivo esperado en caja</span><br><strong style="color:#357a41;">${{ "%.2f"|format(totals.esperado) }}</strong></div>
+    </div>
+
+    <details style="margin-bottom:6px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--color-primary-dark);">Cerrar caja</summary>
+      <form method="post" action="{{ url_for('admin_cerrar_caja') }}" style="margin-top:14px;max-width:420px;"
+            onsubmit="return confirm('¿Cerrar la caja? No vas a poder cargar más ventas presenciales hasta abrir una nueva.');">
+        <div class="form-group">
+          <label>Efectivo contado al cerrar</label>
+          <input type="number" name="closing_amount" min="0" step="0.01" required placeholder="Contá la plata que hay en la caja">
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <input type="text" name="notes" placeholder="Ej: faltan $500, se los prestó a...">
+        </div>
+        <button class="btn btn-danger" type="submit">Cerrar caja</button>
+      </form>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">Registrar gasto</h3>
+    <form method="post" action="{{ url_for('admin_nuevo_gasto') }}" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Categoría</label>
+        <select name="category">
+          {% for c in expense_categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:180px;">
+        <label>Descripción</label>
+        <input type="text" name="description" placeholder="Ej: pago proveedor telas">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Monto</label>
+        <input type="number" name="amount" min="0.01" step="0.01" required placeholder="Ej: 5000">
+      </div>
+      <button class="btn btn-outline btn-sm" type="submit">+ Registrar</button>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <h3 style="margin:18px 20px 0;">Ventas de esta caja</h3>
+    {% if sales %}
+    <table>
+      <thead><tr><th>Hora</th><th>Cliente</th><th>Medio de pago</th><th>Total</th><th></th><th></th></tr></thead>
+      <tbody>
+        {% for s in sales %}
+        <tr style="{% if s.status == 'cancelada' %}opacity:0.55;{% endif %}">
+          <td>{{ s.created_at.strftime('%H:%M') }}</td>
+          <td>{{ s.customer_name or "Consumidor final" }}</td>
+          <td>{{ s.payment_method }}</td>
+          <td>
+            {% if s.status == 'cancelada' %}<span style="text-decoration:line-through;">${{ "%.2f"|format(s.total) }}</span> <span class="badge badge-off">Cancelada</span>
+            {% else %}${{ "%.2f"|format(s.total) }}{% endif %}
+          </td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('admin_ticket_venta', sale_id=s.id) }}" target="_blank">Ver ticket</a></td>
+          <td>
+            {% if s.status != 'cancelada' %}
+            <form method="post" action="{{ url_for('admin_cancel_pos_sale', sale_id=s.id) }}"
+                  onsubmit="return confirm('¿Cancelar esta venta? El stock vendido se devuelve automáticamente.');">
+              <input type="hidden" name="next" value="{{ url_for('admin_caja') }}">
+              <button class="btn btn-danger btn-sm" type="submit">Cancelar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="subtitle" style="padding:0 20px 18px;">Todavía no cargaste ninguna venta en esta caja.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <h3 style="margin:18px 20px 0;">Gastos de esta caja</h3>
+    {% if expenses %}
+    <table>
+      <thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Monto</th></tr></thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td>{{ e.created_at.strftime('%H:%M') }}</td>
+          <td>{{ e.category }}</td>
+          <td>{{ e.description or "—" }}</td>
+          <td>${{ "%.2f"|format(e.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="subtitle" style="padding:0 20px 18px;">Todavía no registraste ningún gasto en esta caja.</p>
+    {% endif %}
+  </div>
+
+  {% endif %}
+
+  <p class="subtitle"><a href="{{ url_for('admin_caja_historial') }}">Ver historial de cajas anteriores &rarr;</a></p>
+{% endblock %}

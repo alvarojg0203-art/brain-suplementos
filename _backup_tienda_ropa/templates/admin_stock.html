@@ -1,0 +1,130 @@
+{% extends "admin_base.html" %}
+{% block title %}Stock{% endblock %}
+{% block content %}
+  <h1>Stock</h1>
+  <p class="subtitle">
+    {% if filtered %}{{ rows|length }} producto(s){% else %}Elegí una categoría o buscá un nombre para ver el stock{% endif %}
+  </p>
+
+  <div class="range-tabs">
+    <a class="range-tab {% if categoria == 'indumentaria' %}active{% endif %}" href="{{ url_for('admin_stock', categoria='indumentaria') }}">Indumentaria</a>
+    <a class="range-tab {% if categoria == 'calzado' %}active{% endif %}" href="{{ url_for('admin_stock', categoria='calzado') }}">Calzado</a>
+    <a class="range-tab {% if categoria == 'accesorios' %}active{% endif %}" href="{{ url_for('admin_stock', categoria='accesorios') }}">Accesorios</a>
+    <a class="range-tab {% if categoria == 'todos' %}active{% endif %}" href="{{ url_for('admin_stock', categoria='todos') }}">Todos</a>
+    {% if filtered %}<a class="range-tab range-tab-clear" href="{{ url_for('admin_stock') }}">✕ Limpiar filtros</a>{% endif %}
+    {% if filtered and rows %}
+    <a class="range-tab" style="margin-left:auto;"
+       href="{{ url_for('admin_export_stock', categoria=categoria, q=q) }}">⬇ Exportar a PDF</a>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('admin_stock') }}" class="date-range-form">
+    {% if categoria %}<input type="hidden" name="categoria" value="{{ categoria }}">{% endif %}
+    <div class="form-group" style="flex:1;min-width:220px;">
+      <label>Buscar por nombre</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Ej: cazadora">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar</button>
+  </form>
+
+  {% if not filtered %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Elegí "Indumentaria", "Calzado", "Accesorios" o "Todos" arriba, o buscá un nombre, para ver el stock.
+  </div>
+  {% elif rows %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Foto</th>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><img class="thumb" src="{{ r.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" alt=""></td>
+          <td>{{ r.product_name }}</td>
+          <td style="text-transform:capitalize;">{{ r.category }}</td>
+          <td>
+            {% if r.colors or r.sizes %}
+            <form method="post" action="{{ url_for('admin_update_stock_row', product_id=r.product_id) }}" class="stock-row-form">
+              <input type="hidden" name="next" value="{{ url_for('admin_stock', categoria=categoria, q=q) }}">
+              {% if r.colors %}
+              <div class="stock-variant-row">
+                {% for c in r.colors %}
+                  {% if c.sizes %}
+                  <div class="stock-color-group">
+                    <span class="stock-variant-label">
+                      <span style="width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid var(--color-border);background:{{ c.color_hex }};"></span>
+                      {{ c.color_name }}
+                    </span>
+                    {% for s in c.sizes %}
+                    <span class="stock-variant-chip">
+                      <input type="hidden" name="size_id" value="{{ s.id }}">
+                      <span class="stock-variant-label">Talle {{ s.size_name }}</span>
+                      <input type="number" name="size_stock" min="0" value="{{ s.stock }}">
+                    </span>
+                    {% endfor %}
+                  </div>
+                  {% else %}
+                  <div class="stock-color-group">
+                    <span class="stock-variant-chip">
+                      <input type="hidden" name="color_id" value="{{ c.id }}">
+                      <span class="stock-variant-label">
+                        <span style="width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid var(--color-border);background:{{ c.color_hex }};"></span>
+                        {{ c.color_name }}
+                      </span>
+                      <input type="number" name="color_stock" min="0" value="{{ c.stock }}">
+                    </span>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              {% if r.sizes and not r.colors %}
+              <div class="stock-variant-row">
+                {% for s in r.sizes %}
+                <span class="stock-variant-chip">
+                  <input type="hidden" name="size_id" value="{{ s.id }}">
+                  <span class="stock-variant-label">Talle {{ s.size_name }}</span>
+                  <input type="number" name="size_stock" min="0" value="{{ s.stock }}">
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <button class="btn btn-outline btn-sm" type="submit" style="margin-top:8px;">Guardar todo</button>
+            </form>
+
+            {% if r.colors %}
+            <div class="stock-variant-row" style="margin-top:8px;">
+              {% for c in r.colors %}
+              <form method="post" action="{{ url_for('admin_add_color_size', color_id=c.id) }}" class="stock-add-size-form">
+                <input type="hidden" name="next" value="{{ url_for('admin_stock', categoria=categoria, q=q) }}">
+                <input type="text" name="size_name" placeholder="Talle nuevo para {{ c.color_name }}" style="width:150px;" required>
+                <button class="btn btn-outline btn-sm" type="submit" title="Agregar talle a este color">+ talle</button>
+              </form>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% else %}
+            <form method="post" action="{{ url_for('admin_update_product_stock', product_id=r.product_id) }}" class="stock-variant-chip">
+              <input type="hidden" name="next" value="{{ url_for('admin_stock', categoria=categoria, q=q) }}">
+              <input type="number" name="stock" min="0" value="{{ r.stock }}">
+              <button class="btn btn-outline btn-sm" type="submit">Guardar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">No hay productos que coincidan con ese filtro.</div>
+  {% endif %}
+{% endblock %}

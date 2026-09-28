@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi cuenta · BrainSuplementos</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Poppins','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;
+    background:#f3ebe0; color:#2b2119; margin:0;
+  }
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:18px 24px;background:#fff;border-bottom:1px solid #e4d6c4;
+  }
+  .logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;letter-spacing:2px;color:#6b4f3f;text-decoration:none;}
+  .logo span{font-weight:300;}
+  .topbar a.back{font-size:0.88rem;color:#8a7a6c;text-decoration:none;font-weight:600;}
+  .topbar a.back:hover{color:#6b4f3f;}
+  .container{max-width:760px;margin:0 auto;padding:36px 24px 60px;}
+  h1{font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:4px;}
+  .sub{color:#8a7a6c;font-size:0.92rem;margin-bottom:28px;}
+  .account-card{
+    background:#fff;border:1px solid #e4d6c4;border-radius:14px;padding:22px 24px;
+    margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;
+  }
+  .account-card div p{margin:2px 0;font-size:0.9rem;color:#8a7a6c;}
+  .account-card div strong{font-size:1.05rem;}
+  .btn-logout{
+    padding:10px 20px;border-radius:24px;font-weight:600;font-size:0.85rem;
+    border:1.5px solid #e4d6c4;color:#2b2119;text-decoration:none;transition:all .2s;
+  }
+  .btn-logout:hover{background:#6b4f3f;color:#fff;border-color:#6b4f3f;}
+  h2.section-title{font-family:'Poppins',sans-serif;font-size:1.15rem;margin-bottom:16px;}
+  .order-card{
+    background:#fff;border:1px solid #e4d6c4;border-radius:14px;padding:20px 22px;margin-bottom:16px;
+  }
+  .order-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+  .order-head strong{font-size:0.98rem;}
+  .order-head .date{color:#8a7a6c;font-size:0.82rem;}
+  .badge{padding:4px 12px;border-radius:14px;font-size:0.74rem;font-weight:700;text-transform:capitalize;}
+  .badge-pendiente{background:#fdf0d5;color:#7a5c14;}
+  .badge-pagado{background:#e3f2e5;color:#357a41;}
+  .badge-enviado{background:#e1eefc;color:#2b5f96;}
+  .badge-entregado{background:#e3f2e5;color:#357a41;}
+  .badge-cancelado{background:#f3e3e3;color:#a33d3d;}
+  .order-items{border-top:1px solid #f2ece7;padding-top:10px;font-size:0.88rem;}
+  .order-items div{display:flex;justify-content:space-between;padding:4px 0;color:#4a4340;}
+  .order-items .variant{color:#8a7a6c;font-size:0.8rem;}
+  .order-total{text-align:right;margin-top:10px;font-weight:700;}
+  .empty{text-align:center;color:#8a7a6c;padding:50px 20px;background:#fff;border-radius:14px;border:1px solid #e4d6c4;}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="/" class="logo"><img src="/static/img/logo-brain.png" alt="BrainSuplementos" style="height:40px;width:auto;border-radius:6px;"></a>
+    <a href="/" class="back">&larr; Volver a la tienda</a>
+  </div>
+
+  <div class="container">
+    <h1>Mi cuenta</h1>
+    <p class="sub">Tus datos y el historial de tus compras</p>
+
+    <div class="account-card">
+      <div>
+        <strong>{{ customer.name }}</strong>
+        <p>{{ customer.email or "Sin email registrado" }}</p>
+        {% if customer.phone %}<p>{{ customer.phone }}</p>{% endif %}
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+
+    <h2 class="section-title">Mis pedidos</h2>
+
+    {% if orders %}
+      {% for o in orders %}
+      <div class="order-card">
+        <div class="order-head">
+          <div>
+            <strong>Pedido #{{ o.id }}</strong>
+            <div class="date">{{ o.created_at.strftime("%d/%m/%Y %H:%M") }}</div>
+          </div>
+          <span>
+            {% if o.cancelled %}
+              <span class="badge badge-cancelado">cancelado</span>
+            {% else %}
+              <span class="badge badge-{{ o.payment_status }}">{{ o.payment_status }}</span>
+              <span class="badge badge-{{ 'entregado' if o.delivery_status == 'entregado' else 'enviado' }}">{{ o.delivery_status.replace('_', ' ') }}</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="order-items">
+          {% for it in o['items'] %}
+          <div>
+            <span>{{ it.product_name }} x{{ it.qty }}{% if it.flavor_name %} <span class="variant">· {{ it.flavor_name }}</span>{% endif %}{% if it.weight_label %} <span class="variant">· Peso {{ it.weight_label }}</span>{% endif %}</span>
+            <span>${{ "%.2f"|format(it.unit_price * it.qty) }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="order-total">Total: ${{ "%.2f"|format(o.total) }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">Todavía no hiciste ningún pedido. <a href="/#catalogo" style="color:#6b4f3f;font-weight:600;">Ver catálogo</a></div>
+    {% endif %}
+  </div>
+</body>
+</html>

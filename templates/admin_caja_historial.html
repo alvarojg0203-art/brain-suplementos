@@ -1,0 +1,44 @@
+{% extends "admin_base.html" %}
+{% block title %}Historial de caja{% endblock %}
+{% block content %}
+  <h1>Historial de caja</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_caja') }}">&larr; Volver a Caja</a></p>
+
+  {% if registers %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Apertura</th><th>Cierre</th><th>Monto inicial</th><th>Contado al cerrar</th>
+          <th>Esperado</th><th>Diferencia</th><th>Estado</th><th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in registers %}
+        <tr>
+          <td>{{ r.opened_at.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ r.closed_at.strftime('%d/%m/%Y %H:%M') if r.closed_at else "—" }}</td>
+          <td>${{ "%.2f"|format(r.opening_amount) }}</td>
+          <td>{{ "$" ~ "%.2f"|format(r.closing_amount) if r.closing_amount is not none else "—" }}</td>
+          <td>{{ "$" ~ "%.2f"|format(r.expected_amount) if r.expected_amount is not none else "—" }}</td>
+          <td>
+            {% if r.difference is not none %}
+              {% if r.difference == 0 %}<span style="color:#357a41;">Coincide</span>
+              {% elif r.difference > 0 %}<span style="color:#357a41;">+${{ "%.2f"|format(r.difference) }}</span>
+              {% else %}<span style="color:#b34747;">-${{ "%.2f"|format(-r.difference) }}</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if r.status == 'abierta' %}<span class="badge badge-on">Abierta</span>
+            {% else %}<span class="badge badge-off">Cerrada</span>{% endif %}
+          </td>
+          <td>{{ r.notes or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no se abrió ninguna caja.</div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+{% block title %}Ticket #{{ sale.id }}{% endblock %}
+{% block content %}
+  <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+    <a href="{{ url_for('admin_caja') }}">&larr; Volver a Caja</a>
+    <button class="btn" onclick="window.print()">Imprimir (cliente + local)</button>
+  </div>
+  <p class="no-print subtitle" style="margin-bottom:18px;">
+    Salen dos copias iguales, una atrás de la otra, cada una en su propia hoja: la primera es para el cliente y la segunda para tu prima (solo esta segunda pide firma/DNI si el pago fue con tarjeta). Es un ticket de prueba: cuando me pases el CUIT, dirección y teléfono del local los agrego acá.
+  </p>
+
+  {% for copy in [
+    {"needs_signature": false},
+    {"needs_signature": true}
+  ] %}
+  <div class="card ticket-box ticket-copy">
+    <h2>Vua Showroom</h2>
+    <p class="ticket-sub">Comprobante no fiscal · Venta presencial</p>
+    {% if sale.status == 'cancelada' %}
+    <p style="text-align:center;font-weight:700;color:#a33d3d;border:2px solid #a33d3d;border-radius:8px;padding:6px;margin:10px 0;">VENTA CANCELADA</p>
+    {% endif %}
+    <hr>
+    <div class="ticket-row"><span>Ticket</span><span>#{{ sale.id }}</span></div>
+    <div class="ticket-row"><span>Fecha</span><span>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</span></div>
+    {% if sale.customer_name %}<div class="ticket-row"><span>Cliente</span><span>{{ sale.customer_name }}</span></div>{% endif %}
+    <div class="ticket-row"><span>Pago</span><span>{{ sale.payment_method }}</span></div>
+    <hr>
+    <table class="ticket-items">
+      <thead><tr><th>Cant.</th><th>Producto</th><th>Subtotal</th></tr></thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td>{{ it.qty }}</td>
+          <td>{{ it.product_name }}{% if it.color_name or it.size_name %}<br><span class="ticket-variant">{{ [it.color_name, ("Talle " ~ it.size_name) if it.size_name else None]|select|join(" · ") }}</span>{% endif %}</td>
+          <td>${{ "%.2f"|format(it.unit_price * it.qty) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <hr>
+    <div class="ticket-row ticket-total"><span>TOTAL</span><span>${{ "%.2f"|format(sale.total) }}</span></div>
+
+    {% if copy.needs_signature and sale.payment_method and sale.payment_method.startswith("Tarjeta") %}
+    <hr>
+    <div class="ticket-signature">
+      <p class="ticket-sub" style="margin-bottom:10px;">Pago con tarjeta — completar a mano:</p>
+      <p>Firma: ________________________________</p>
+      <p>Aclaración: ________________________________</p>
+      <p>DNI: ________________________________</p>
+    </div>
+    {% endif %}
+
+    <hr>
+    <p class="ticket-sub">¡Gracias por tu compra!</p>
+  </div>
+  {% endfor %}
+{% endblock %}

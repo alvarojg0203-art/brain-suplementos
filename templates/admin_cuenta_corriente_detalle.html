@@ -1,0 +1,59 @@
+{% extends "admin_base.html" %}
+{% block title %}Cuenta corriente · {{ customer.name }}{% endblock %}
+{% block content %}
+  <h1>{{ customer.name }}</h1>
+  <p class="subtitle">
+    <a href="{{ url_for('admin_cuenta_corriente') }}">&larr; Volver a Cuenta corriente</a>
+    · {{ customer.phone or "sin teléfono" }} · {{ customer.email or "sin email" }}
+  </p>
+
+  <div class="card">
+    <div style="font-size:0.8rem;color:var(--color-muted);">Saldo actual</div>
+    <div style="font-size:1.8rem;font-weight:700;color:{{ '#a33d3d' if balance > 0 else '#357a41' }};">${{ "%.2f"|format(balance) }}</div>
+    <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;">{{ "Te debe" if balance > 0 else "Está al día" }}</p>
+  </div>
+
+  <div class="card" style="max-width:480px;">
+    <h3 style="margin-bottom:14px;">+ Registrar movimiento</h3>
+    <form method="post" action="{{ url_for('admin_nuevo_movimiento_cuenta', customer_id=customer.id) }}">
+      <div class="form-group">
+        <label>Tipo</label>
+        <select name="movement_type">
+          <option value="pago">Pago (baja la deuda)</option>
+          <option value="cargo">Cargo / fiado (sube la deuda)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Monto</label>
+        <input type="number" name="amount" min="0" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" name="description" placeholder="Ej: pagó en efectivo">
+      </div>
+      <button class="btn" type="submit">Registrar</button>
+    </form>
+  </div>
+
+  {% if movements %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Monto</th></tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td style="white-space:nowrap;">{{ m.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>{% if m.movement_type == "cargo" %}<span class="badge badge-off">Cargo</span>{% else %}<span class="badge badge-on">Pago</span>{% endif %}</td>
+          <td>{{ m.description or ("Venta en Caja #" ~ m.pos_sale_id if m.pos_sale_id else "—") }}</td>
+          <td style="font-weight:700;">${{ "%.2f"|format(m.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no hay movimientos para este cliente.</div>
+  {% endif %}
+{% endblock %}

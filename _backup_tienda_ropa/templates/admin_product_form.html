@@ -1,0 +1,142 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ "Editar producto" if product else "Nuevo producto" }}{% endblock %}
+{% block content %}
+  <h1>{{ "Editar producto" if product else "Nuevo producto" }}</h1>
+  <p class="subtitle">
+    <a href="{{ url_for('admin_dashboard') }}">&larr; Volver a productos</a>
+    {% if product %} · <a href="{{ url_for('admin_product_colors', product_id=product.id) }}">Colores y galería de fotos</a> · <a href="{{ url_for('admin_product_sizes', product_id=product.id) }}">Talles</a> · <a href="{{ url_for('admin_stock') }}">Stock</a>{% endif %}
+  </p>
+  {% if not product %}
+  <p style="font-size:0.82rem;color:#8a7a6c;max-width:520px;margin-top:-8px;margin-bottom:14px;">
+    Acá solo cargás los datos del producto. Después de crearlo vas a poder agregar los colores, talles y fotos, y la cantidad de stock se carga siempre desde <strong>Stock</strong>, todo en un solo lugar.
+  </p>
+  {% endif %}
+
+  <div class="card" style="max-width:520px;">
+    <form method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" name="name" required value="{{ product.name if product else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Categoría</label>
+        <select name="category" id="categorySelect" required onchange="toggleSubcategoryField()">
+          {% for cat in ["indumentaria","calzado","accesorios"] %}
+          <option value="{{ cat }}" {% if product and product.category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" id="subcategoryGroup">
+        <label>Subcategoría (opcional)</label>
+        <select name="subcategory" id="subcategorySelect">
+          <option value="">Sin especificar</option>
+          {% for s in subcategories %}
+          <option value="{{ s.slug }}" {% if product and product.subcategory == s.slug %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Así el cliente puede filtrar más puntual dentro de la categoría (ej: "Remeras" o "Vestidos" dentro de Indumentaria). Las opciones se administran desde <a href="{{ url_for('admin_subcategories') }}">Subcategorías</a> en el menú.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Precio (ARS)</label>
+        <input type="number" step="0.01" min="0" name="price" required value="{{ product.price if product else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Descuento (opcional)</label>
+        <div style="position:relative;">
+          <input type="number" step="1" min="1" max="99" name="discount_percent" value="{{ product.discount_percent|int if product and product.discount_percent else '' }}" placeholder="Ej: 20" style="padding-right:34px;">
+          <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#8a7a6c;font-size:0.9rem;">%</span>
+        </div>
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Dejalo vacío si no tiene descuento. Ej: poné 20 para un 20% off. En la tienda se va a mostrar el precio de arriba tachado y el precio final ya con el descuento aplicado.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Código de barras / SKU (opcional)</label>
+        <input type="text" name="barcode" value="{{ product.barcode if product and product.barcode else '' }}" placeholder="Escaneá o escribí el código">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Si lo cargás, en Caja se puede agregar este producto a una venta escaneándolo con la lectora de código de barras.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Precio de costo (opcional)</label>
+        <input type="number" step="0.01" min="0" name="cost_price" value="{{ product.cost_price if product and product.cost_price is not none else '' }}" placeholder="Lo que te sale a vos, no el precio de venta">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">No lo ve el cliente. Si lo completás, en <a href="{{ url_for('admin_reportes') }}">Reportes</a> se puede calcular la ganancia real (venta - costo), no solo el total facturado.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="description" rows="3">{{ product.description if product else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Foto del producto</label>
+        {% if product and product.image_url %}
+          <img src="{{ product.image_url }}" alt="" style="width:100px;border-radius:8px;margin-bottom:10px;display:block;">
+        {% endif %}
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">
+          {{ "Subí una foto nueva para reemplazar la actual, o dejalo vacío para mantenerla." if product else "Formatos: jpg, png, webp o gif." }}
+        </p>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="active" id="active" style="width:auto;" {% if not product or product.active %}checked{% endif %}>
+        <label for="active" style="margin:0;">Visible en la tienda</label>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="show_low_stock_badge" id="show_low_stock_badge" style="width:auto;" {% if product and product.show_low_stock_badge %}checked{% endif %}>
+        <label for="show_low_stock_badge" style="margin:0;">Mostrar aviso "¡Últimas unidades!" en la tienda cuando quede poco stock</label>
+      </div>
+      <p style="font-size:0.78rem;color:#8a7a6c;margin-top:-10px;margin-bottom:14px;">
+        Está destildado por default. Como manejás poco stock en general, tildalo solo en los productos puntuales donde quieras generar esa sensación de urgencia — si lo tildás en todos, deja de llamar la atención.
+      </p>
+
+      <button class="btn" type="submit">{{ "Guardar cambios" if product else "Crear producto" }}</button>
+    </form>
+  </div>
+
+  {% if product and extra_images %}
+  <div class="card" style="max-width:520px;">
+    <h3 style="margin-bottom:6px;">Fotos extra ya cargadas (frente, espalda, detalle...)</h3>
+    <p style="font-size:0.78rem;color:#8a7a6c;margin-bottom:14px;">
+      Estas son fotos generales que se cargaron antes para este producto (independientes de los colores). Se siguen mostrando en la tienda. Para sumar fotos nuevas, hacelo desde <a href="{{ url_for('admin_product_colors', product_id=product.id) }}">Colores</a>: subiendo ahí 2 o más fotos por color (por ejemplo frente y espalda) alcanza para que también se vean en el catálogo.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      {% for img in extra_images %}
+      <div style="position:relative;">
+        <img src="{{ img.image_url }}" style="width:90px;height:110px;object-fit:cover;border-radius:8px;background:#eee;display:block;">
+        <form method="post" action="{{ url_for('admin_delete_product_image', image_id=img.id) }}" style="position:absolute;top:4px;right:4px;">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <button type="submit" title="Borrar foto"
+                  style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:0.75rem;cursor:pointer;">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <script>
+    // Al cambiar la categoría, recargamos las opciones de subcategoría
+    // desde /api/subcategories para esa categoría (cada categoría tiene
+    // las suyas, cargadas desde el menú "Subcategorías").
+    async function toggleSubcategoryField(){
+      const cat = document.getElementById("categorySelect").value;
+      const select = document.getElementById("subcategorySelect");
+      const current = select.value;
+      select.innerHTML = `<option value="">Cargando...</option>`;
+      try{
+        const res = await fetch(`/api/subcategories?category=${encodeURIComponent(cat)}`);
+        const data = await res.json();
+        select.innerHTML = `<option value="">Sin especificar</option>` +
+          data.map(s => `<option value="${s.slug}">${s.name}</option>`).join("");
+        if(data.some(s => s.slug === current)) select.value = current;
+      }catch(err){
+        select.innerHTML = `<option value="">Sin especificar</option>`;
+      }
+    }
+  </script>
+{% endblock %}

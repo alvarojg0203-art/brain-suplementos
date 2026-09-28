@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Crear administrador · BrainSuplementos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:light;}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;background:#eef2f9;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:24px 0;}
+  .box{background:#fff;padding:36px 32px;border-radius:14px;box-shadow:0 6px 20px rgba(12,32,60,0.10);width:100%;max-width:400px;}
+  h1{font-family:'Poppins','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;font-weight:600;font-size:1.3rem;margin:0 0 4px;color:#0f2645;}
+  p.sub{color:#5f6b80;font-size:0.88rem;margin:0 0 20px;}
+  label{display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;color:#0f2645;}
+  input,select{width:100%;padding:11px 14px;border:1.5px solid #dbe3ef;border-radius:8px;font-size:0.9rem;margin-bottom:16px;box-sizing:border-box;font-family:inherit;background:#fff;color:#0f2645;}
+  button{width:100%;padding:12px;border:none;border-radius:24px;background:#0c4187;color:#fff;font-weight:600;cursor:pointer;font-size:0.95rem;}
+  button:hover{background:#0a3468;}
+  .flash{background:#fdf0d5;border:1px solid #eac97e;color:#7a5c14;padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;}
+</style>
+</head>
+<body>
+  <form class="box" method="post">
+    <h1>Crear cuenta de administrador</h1>
+    <p class="sub">Es la primera vez que se entra al panel: creá tu usuario para poder ingresar.</p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <label>Nombre y apellido</label>
+    <input type="text" name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Usuario</label>
+    <input type="text" name="username" required>
+
+    <label>Contraseña (mínimo 6 caracteres)</label>
+    <input type="password" name="password" required minlength="6">
+
+    <label>Repetir contraseña</label>
+    <input type="password" name="password2" required minlength="6">
+
+    <label>Pregunta de seguridad (para recuperar la contraseña si la olvidás)</label>
+    <input type="text" name="security_question" placeholder="Ej: ¿Nombre de tu primera mascota?" required>
+
+    <label>Respuesta</label>
+    <input type="text" name="security_answer" required>
+
+    <button type="submit">Crear cuenta</button>
+  </form>
+</body>
+</html>

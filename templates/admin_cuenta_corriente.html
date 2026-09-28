@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+{% block title %}Cuenta corriente{% endblock %}
+{% block content %}
+  <h1>Cuenta corriente</h1>
+  <p class="subtitle">Clientes que compraron fiado. El saldo sube cuando se les carga una venta a cuenta y baja cuando pagan.</p>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:0.8rem;color:var(--color-muted);">Total que te deben entre todos</div>
+      <div style="font-size:1.6rem;font-weight:700;color:{{ '#a33d3d' if total_deuda > 0 else '#357a41' }};">${{ "%.2f"|format(total_deuda) }}</div>
+    </div>
+  </div>
+
+  {% if balances %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Cliente</th><th>Teléfono</th><th>Saldo</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for b in balances %}
+        <tr>
+          <td><strong>{{ b.name }}</strong></td>
+          <td>{{ b.phone or "—" }}</td>
+          <td style="color:{{ '#a33d3d' if b.balance > 0 else '#357a41' }};font-weight:700;">${{ "%.2f"|format(b.balance) }}</td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('admin_cuenta_corriente_detalle', customer_id=b.id) }}">Ver movimientos</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Todavía nadie tiene cuenta corriente. Se arma sola la primera vez que le cargues una venta con medio de pago
+    "Cuenta corriente" a un cliente desde Caja.
+  </div>
+  {% endif %}
+{% endblock %}

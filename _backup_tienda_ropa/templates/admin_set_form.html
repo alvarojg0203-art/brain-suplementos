@@ -1,0 +1,59 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ "Editar conjunto" if set else "Nuevo conjunto" }}{% endblock %}
+{% block content %}
+  <h1>{{ "Editar conjunto" if set else "Nuevo conjunto" }}</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_sets') }}">&larr; Volver a conjuntos</a></p>
+
+  <div class="card" style="max-width:600px;">
+    <form method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Nombre del conjunto</label>
+        <input type="text" name="name" required value="{{ set.name if set else '' }}" placeholder="Ej: Look de oficina">
+      </div>
+
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" name="description" value="{{ set.description if set else '' }}" placeholder="Ej: Remera + pantalón + cinturón">
+      </div>
+
+      <div class="form-group">
+        <label>Foto del conjunto (opcional)</label>
+        {% if set and set.image_url %}
+          <img src="{{ set.image_url }}" alt="" style="width:100px;border-radius:8px;margin-bottom:10px;display:block;">
+        {% endif %}
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Si no subís nada, en la tienda se muestran las fotos de los productos elegidos, una al lado de la otra.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Precio especial del conjunto (opcional)</label>
+        <input type="number" name="discount_price" min="0" step="0.01"
+               value="{{ set.discount_price if set and set.discount_price is not none else '' }}"
+               placeholder="Dejalo vacío para cobrar la suma normal de los productos">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Si lo completás, el conjunto se muestra con ese precio (tachando la suma normal) y se cobra ese precio en vez de sumar cada producto por separado — útil para vender el look más barato que comprando cada prenda individual.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Productos que forman este conjunto (elegí 2 o más)</label>
+        <div style="max-height:320px;overflow-y:auto;border:1.5px solid var(--color-border);border-radius:8px;padding:8px;">
+          {% for p in all_products %}
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--color-border);">
+            <input type="checkbox" name="product_ids" value="{{ p.id }}" style="width:auto;" {% if p.id in selected_ids %}checked{% endif %}>
+            <img src="{{ p.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" style="width:32px;height:38px;object-fit:cover;border-radius:5px;background:#eee;">
+            {{ p.name }}
+          </label>
+          {% else %}
+          <p class="subtitle" style="margin:8px;">Todavía no cargaste productos activos.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="active" id="active" style="width:auto;" {% if not set or set.active %}checked{% endif %}>
+        <label for="active" style="margin:0;">Visible en la tienda</label>
+      </div>
+
+      <button class="btn" type="submit">{{ "Guardar cambios" if set else "Crear conjunto" }}</button>
+    </form>
+  </div>
+{% endblock %}

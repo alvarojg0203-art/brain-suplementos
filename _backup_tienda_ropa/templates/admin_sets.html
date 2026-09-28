@@ -1,0 +1,45 @@
+{% extends "admin_base.html" %}
+{% block title %}Conjuntos{% endblock %}
+{% block content %}
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1>Conjuntos</h1>
+      <p class="subtitle">Looks armados con productos que ya tenés cargados. Aparecen en la tienda para que el cliente agregue todo junto.</p>
+    </div>
+    <a class="btn" href="{{ url_for('admin_new_set') }}">+ Nuevo conjunto</a>
+  </div>
+
+  {% for s in sets %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img class="thumb" src="{{ s.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" alt="">
+        <div>
+          <strong>{{ s.name }}</strong>
+          {% if s.active %}<span class="badge badge-on" style="margin-left:8px;">Visible</span>{% else %}<span class="badge badge-off" style="margin-left:8px;">Oculto</span>{% endif %}
+          <br>
+          <span class="subtitle" style="margin:0;">{{ s['items']|length }} producto(s){% if s.description %} · {{ s.description }}{% endif %}</span>
+          {% if s.discount_price %}<br><span class="subtitle" style="margin:0;color:#357a41;font-weight:600;">Precio especial: ${{ "%.2f"|format(s.discount_price) }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-outline btn-sm" href="{{ url_for('admin_edit_set', set_id=s.id) }}">Editar</a>
+        <form method="post" action="{{ url_for('admin_delete_set', set_id=s.id) }}"
+              onsubmit="return confirm('¿Eliminar el conjunto «{{ s.name }}»? Los productos no se borran, solo deja de mostrarse el conjunto.');">
+          <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      {% for it in s['items'] %}
+      <div style="text-align:center;">
+        <img src="{{ it.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" style="width:56px;height:68px;object-fit:cover;border-radius:6px;background:#eee;display:block;">
+        <span style="font-size:0.7rem;color:var(--color-muted);">{{ it.name }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no armaste ningún conjunto.</div>
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "admin_base.html" %}
+{% block title %}Reseñas{% endblock %}
+{% block content %}
+  <h1>Reseñas de clientes</h1>
+  <p class="subtitle">{{ reviews|length }} reseña(s) en total</p>
+
+  {% if reviews %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cliente</th>
+          <th>Calificación</th>
+          <th>Comentario</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reviews %}
+        <tr>
+          <td><a href="{{ url_for('admin_edit_product', product_id=r.product_id) }}">{{ r.product_name }}</a></td>
+          <td>{{ r.customer_name }}</td>
+          <td style="white-space:nowrap;color:#c9a227;">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</td>
+          <td style="max-width:320px;">{{ r.comment or "—" }}</td>
+          <td style="white-space:nowrap;">{{ r.created_at.strftime("%d/%m/%Y") }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_review', review_id=r.id) }}"
+                  onsubmit="return confirm('¿Eliminar esta reseña?');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no hay reseñas cargadas.</div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperar contraseña · Panel admin</title>
+<style>
+  body{font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;background:#f3ebe0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
+  .box{background:#fff;padding:36px 32px;border-radius:14px;box-shadow:0 6px 20px rgba(46,42,40,0.1);width:100%;max-width:340px;}
+  h1{font-size:1.3rem;margin:0 0 4px;color:#2b2119;}
+  p{color:#8a7a6c;font-size:0.88rem;margin:0 0 20px;}
+  label{display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;color:#2b2119;}
+  input{width:100%;padding:12px 14px;border:1.5px solid #e4d6c4;border-radius:8px;font-size:0.95rem;margin-bottom:16px;box-sizing:border-box;}
+  button{width:100%;padding:12px;border:none;border-radius:24px;background:#6b4f3f;color:#fff;font-weight:600;cursor:pointer;font-size:0.95rem;}
+  button:hover{background:#57402f;}
+  .flash{background:#fdf0d5;border:1px solid #eac97e;color:#7a5c14;padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;}
+  a.back{display:block;text-align:center;margin-top:14px;font-size:0.85rem;color:#6b4f3f;text-decoration:none;}
+</style>
+</head>
+<body>
+  <form class="box" method="post">
+    <h1>Recuperar contraseña</h1>
+    <p>Ingresá tu usuario o email para empezar.</p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+    <label>Usuario o email</label>
+    <input type="text" name="identifier" required autofocus>
+    <button type="submit">Continuar</button>
+    <a class="back" href="{{ url_for('admin_login') }}">&larr; Volver a ingresar</a>
+  </form>
+</body>
+</html>

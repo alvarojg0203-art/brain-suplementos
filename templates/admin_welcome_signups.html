@@ -1,0 +1,45 @@
+{% extends "admin_base.html" %}
+{% block title %}Bienvenida{% endblock %}
+{% block content %}
+  <h1>Popup de bienvenida</h1>
+  <p class="subtitle">Nombre, mail y cumpleaños de quienes se anotaron en la tienda a cambio del cupón de descuento de la primera compra.</p>
+
+  {% if signups %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Cumpleaños</th>
+          <th>Cupón</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in signups %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td>{{ s.email }}</td>
+          <td>{{ s.birthday.strftime("%d/%m/%Y") if s.birthday else "—" }}</td>
+          <td><strong>{{ s.coupon_code or "—" }}</strong></td>
+          <td>{{ s.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td class="actions">
+            <form method="post" action="{{ url_for('admin_delete_welcome_signup', signup_id=s.id) }}"
+                  onsubmit="return confirm('¿Eliminar este registro?');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:16px;">
+    <a class="btn btn-outline" href="{{ url_for('admin_export_welcome_signups') }}">Descargar CSV</a>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no se anotó nadie.</div>
+  {% endif %}
+{% endblock %}

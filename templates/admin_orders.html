@@ -1,0 +1,127 @@
+{% extends "admin_base.html" %}
+{% block title %}Pedidos{% endblock %}
+{% block content %}
+  {% set current_url = request.full_path.rstrip('?') %}
+  <h1>Pedidos</h1>
+  <p class="subtitle">
+    {% if filtered %}{{ orders|length }} pedido(s) recibido(s){% else %}Elegí un período para ver los pedidos{% endif %}
+  </p>
+
+  <div class="range-tabs">
+    <a class="range-tab {% if rango == 'hoy' %}active{% endif %}" href="{{ url_for('admin_orders', rango='hoy') }}">Hoy</a>
+    <a class="range-tab {% if rango == 'semana' %}active{% endif %}" href="{{ url_for('admin_orders', rango='semana') }}">Esta semana</a>
+    <a class="range-tab {% if rango == 'mes' %}active{% endif %}" href="{{ url_for('admin_orders', rango='mes') }}">Este mes</a>
+    <a class="range-tab {% if rango == 'todos' %}active{% endif %}" href="{{ url_for('admin_orders', rango='todos') }}">Todos</a>
+    {% if filtered %}<a class="range-tab range-tab-clear" href="{{ url_for('admin_orders') }}">✕ Limpiar filtros</a>{% endif %}
+    {% if filtered and orders %}
+    <a class="range-tab" style="margin-left:auto;"
+       href="{{ url_for('admin_export_orders', rango=rango, desde=desde, hasta=hasta) }}">⬇ Exportar a PDF</a>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('admin_orders') }}" class="date-range-form">
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" name="desde" value="{{ desde or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta or '' }}">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar por fecha</button>
+  </form>
+
+  {% if not filtered %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Elegí "Hoy", "Esta semana", "Este mes", "Todos", o un rango de fechas puntual arriba para ver los pedidos.
+  </div>
+  {% elif orders %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Producto(s)</th>
+          <th>Total</th>
+          <th>Entrega</th>
+          <th>Medio de pago</th>
+          <th>Pago</th>
+          <th>Entrega</th>
+          <th>Cancelado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr {% if o.cancelled %}style="opacity:0.55;"{% endif %}>
+          <td>#{{ o.id }}</td>
+          <td style="white-space:nowrap;">{{ o.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>
+            {{ o.customer_name }}<br>
+            <span style="color:#8a7a6c;font-size:0.8rem;">{{ o.customer_phone }}</span>
+          </td>
+          <td>
+            {% for it in o['items'] %}
+            <div style="white-space:nowrap;">
+              {{ it.product_name }}{% if it.flavor_name %} · {{ it.flavor_name }}{% endif %}{% if it.weight_label %} · Peso {{ it.weight_label }}{% endif %} × {{ it.qty }}
+            </div>
+            {% endfor %}
+          </td>
+          <td style="white-space:nowrap;"><strong>${{ "%.2f"|format(o.total) }}</strong></td>
+          <td>
+            {{ o.delivery_method }}
+            {% if o.delivery_address %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ o.delivery_address }}</span>{% endif %}
+            {% if o.shipping_zone %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ o.shipping_zone }} — {{ "Gratis" if not o.shipping_cost else "$" ~ "%.2f"|format(o.shipping_cost) }}</span>{% endif %}
+          </td>
+          <td>{{ o.payment_method }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_update_order_status', order_id=o.id) }}">
+              <input type="hidden" name="next" value="{{ current_url }}">
+              <select name="payment_status" onchange="this.form.submit()" style="padding:6px 10px;border-radius:20px;border:1.5px solid #e4d6c4;font-size:0.8rem;font-weight:600;">
+                <option value="pendiente" {% if o.payment_status == "pendiente" %}selected{% endif %}>pendiente</option>
+                <option value="pagado" {% if o.payment_status == "pagado" %}selected{% endif %}>pagado</option>
+              </select>
+              <noscript><button class="btn btn-outline btn-sm" type="submit">Guardar</button></noscript>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('admin_update_order_delivery', order_id=o.id) }}">
+              <input type="hidden" name="next" value="{{ current_url }}">
+              <select name="delivery_status" onchange="this.form.submit()" style="padding:6px 10px;border-radius:20px;border:1.5px solid #e4d6c4;font-size:0.8rem;font-weight:600;">
+                <option value="no_entregado" {% if o.delivery_status == "no_entregado" %}selected{% endif %}>no entregado</option>
+                <option value="entregado" {% if o.delivery_status == "entregado" %}selected{% endif %}>entregado</option>
+              </select>
+              <noscript><button class="btn btn-outline btn-sm" type="submit">Guardar</button></noscript>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('admin_update_order_cancelled', order_id=o.id) }}"
+                  onsubmit="return confirm('{{ '¿Reactivar este pedido?' if o.cancelled else '¿Cancelar este pedido?' }}');">
+              <input type="hidden" name="cancelled" value="{{ 0 if o.cancelled else 1 }}">
+              <input type="hidden" name="next" value="{{ current_url }}">
+              <button class="btn {{ 'btn-outline' if o.cancelled else 'btn-danger' }} btn-sm" type="submit">
+                {{ "Reactivar" if o.cancelled else "Cancelar" }}
+              </button>
+            </form>
+          </td>
+          <td>
+            <div class="actions">
+              <a class="btn btn-outline btn-sm" href="{{ url_for('admin_edit_order', order_id=o.id, next=current_url) }}">Editar</a>
+              <form method="post" action="{{ url_for('admin_delete_order', order_id=o.id) }}"
+                    onsubmit="return confirm('¿Eliminar el pedido #{{ o.id }} para siempre? No se puede deshacer.');">
+                <input type="hidden" name="next" value="{{ current_url }}">
+                <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">No hay pedidos en este rango.</div>
+  {% endif %}
+{% endblock %}

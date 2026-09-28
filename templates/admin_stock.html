@@ -1,0 +1,149 @@
+{% extends "admin_base.html" %}
+{% block title %}Stock{% endblock %}
+{% block content %}
+  <h1>Stock</h1>
+  <p class="subtitle">
+    {% if filtered %}{{ rows|length }} producto(s){% else %}Elegí una categoría o buscá un nombre para ver el stock{% endif %}
+  </p>
+
+  <div class="range-tabs">
+    {% for cat in categorias %}
+    <a class="range-tab {% if categoria == cat.slug %}active{% endif %}" href="{{ url_for('admin_stock', categoria=cat.slug) }}">{{ cat.icon ~ " " if cat.icon }}{{ cat.name }}</a>
+    {% endfor %}
+    <a class="range-tab {% if categoria == 'todos' %}active{% endif %}" href="{{ url_for('admin_stock', categoria='todos') }}">Todos</a>
+    {% if filtered %}<a class="range-tab range-tab-clear" href="{{ url_for('admin_stock') }}">✕ Limpiar filtros</a>{% endif %}
+    {% if filtered and rows %}
+    <a class="range-tab" style="margin-left:auto;"
+       href="{{ url_for('admin_export_stock', categoria=categoria, q=q) }}">⬇ Exportar a PDF</a>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('admin_stock') }}" class="date-range-form">
+    {% if categoria %}<input type="hidden" name="categoria" value="{{ categoria }}">{% endif %}
+    <div class="form-group" style="flex:1;min-width:220px;">
+      <label>Buscar por nombre</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Ej: whey">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar</button>
+  </form>
+
+  {% if not filtered %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Elegí una categoría o "Todos" arriba, o buscá un nombre, para ver el stock.
+  </div>
+  {% elif rows %}
+  <!-- Un solo form para TODA la lista: cargás todos los números que
+       necesites y los guardás juntos con un solo botón, en vez de tener
+       que apretar "Guardar" fila por fila. Los "+ peso" (agregar un peso
+       nuevo a un sabor) quedan como formularios aparte más abajo en el
+       HTML — HTML no permite forms anidados — pero sus campos siguen
+       viéndose acá, conectados por el atributo form="..." de cada uno. -->
+  <form method="post" action="{{ url_for('admin_update_stock_bulk') }}" id="stockBulkForm">
+    <input type="hidden" name="next" value="{{ url_for('admin_stock', categoria=categoria, q=q) }}">
+    <button class="btn" type="submit" style="margin-bottom:10px;">Guardar todo el stock</button>
+    <p class="mobile-scroll-hint">↔ Deslizá la tabla hacia los costados para ver todo el stock</p>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td><img class="thumb" src="{{ r.image_url or 'https://placehold.co/100x120/eee/999?text=%20' }}" alt=""></td>
+            <td>{{ r.product_name }}</td>
+            <td>{{ r.category_name }}</td>
+            <td>
+              {% if r.colors or r.sizes %}
+                {% if r.colors %}
+                <div class="stock-variant-row">
+                  {% for c in r.colors %}
+                    {% if c.sizes %}
+                    <div class="stock-color-group">
+                      <span class="stock-variant-label">
+                        <span style="width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid var(--color-border);background:{{ c.flavor_color_hex }};"></span>
+                        {{ c.flavor_name }}
+                      </span>
+                      {% for s in c.sizes %}
+                      <span class="stock-variant-chip">
+                        <input type="hidden" name="weight_id" value="{{ s.id }}">
+                        <span class="stock-variant-label">Peso {{ s.weight_label }}</span>
+                        <input type="number" name="weight_stock" min="0" value="{{ s.stock }}">
+                      </span>
+                      {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="stock-color-group">
+                      <span class="stock-variant-chip">
+                        <input type="hidden" name="flavor_id" value="{{ c.id }}">
+                        <span class="stock-variant-label">
+                          <span style="width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid var(--color-border);background:{{ c.flavor_color_hex }};"></span>
+                          {{ c.flavor_name }}
+                        </span>
+                        <input type="number" name="flavor_stock" min="0" value="{{ c.stock }}">
+                      </span>
+                    </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if r.sizes and not r.colors %}
+                <div class="stock-variant-row">
+                  {% for s in r.sizes %}
+                  <span class="stock-variant-chip">
+                    <input type="hidden" name="weight_id" value="{{ s.id }}">
+                    <span class="stock-variant-label">Peso {{ s.weight_label }}</span>
+                    <input type="number" name="weight_stock" min="0" value="{{ s.stock }}">
+                  </span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if r.colors %}
+                <div class="stock-variant-row" style="margin-top:8px;">
+                  {% for c in r.colors %}
+                  <span class="stock-add-size-form">
+                    <input type="text" name="weight_label" placeholder="Peso nuevo para {{ c.flavor_name }}" style="width:150px;" form="addWeight{{ c.id }}" required>
+                    <button class="btn btn-outline btn-sm" type="submit" form="addWeight{{ c.id }}" title="Agregar peso a este color">+ peso</button>
+                  </span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              {% else %}
+                <span class="stock-variant-chip">
+                  <input type="hidden" name="simple_product_id" value="{{ r.product_id }}">
+                  <input type="number" name="simple_product_stock" min="0" value="{{ r.stock }}">
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn" type="submit" style="margin-top:14px;">Guardar todo el stock</button>
+  </form>
+
+  <!-- Formularios de "+ peso" (agregar un peso/talle nuevo a un sabor):
+       tienen que estar fuera del form de arriba porque HTML no permite
+       forms anidados. El input de texto y el botón de cada fila apuntan
+       acá con el atributo form="...". -->
+  {% for r in rows %}
+    {% if r.colors %}
+      {% for c in r.colors %}
+      <form method="post" action="{{ url_for('admin_add_flavor_weight', flavor_id=c.id) }}" id="addWeight{{ c.id }}" style="display:none;">
+        <input type="hidden" name="next" value="{{ url_for('admin_stock', categoria=categoria, q=q) }}">
+      </form>
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">No hay productos que coincidan con ese filtro.</div>
+  {% endif %}
+{% endblock %}

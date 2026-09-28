@@ -1,0 +1,61 @@
+{% extends "admin_base.html" %}
+{% block title %}Subcategorías{% endblock %}
+{% block content %}
+  <h1>Subcategorías</h1>
+  <p class="subtitle">Tipos de producto dentro de cada categoría (ej: "Whey" o "Isolate" dentro de Proteínas, "Monohidratada" dentro de Creatina). Aparecen como filtros en la tienda y como opción al cargar o editar un producto. Las categorías en sí se administran desde <a href="{{ url_for('admin_categories') }}">Categorías</a>.</p>
+
+  {% if not categories %}
+  <div class="card">
+    <p class="subtitle">Todavía no hay ninguna categoría cargada. Creá al menos una en <a href="{{ url_for('admin_categories') }}">Categorías</a> antes de armar subcategorías.</p>
+  </div>
+  {% endif %}
+
+  {% for cat in categories %}
+  <div class="card">
+    <h3 style="margin-bottom:14px;">{{ cat.icon ~ " " if cat.icon }}{{ cat.name }}</h3>
+
+    {% if grouped[cat.id] %}
+    <table style="margin-bottom:18px;">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in grouped[cat.id] %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td>
+            {% if s.active %}<span class="badge badge-on">Visible</span>
+            {% else %}<span class="badge badge-off">Oculta</span>{% endif %}
+          </td>
+          <td class="actions">
+            <form method="post" action="{{ url_for('admin_toggle_subcategory', subcategory_id=s.id) }}">
+              <button class="btn btn-outline btn-sm" type="submit">{{ "Ocultar" if s.active else "Mostrar" }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_delete_subcategory', subcategory_id=s.id) }}"
+                  onsubmit="return confirm('¿Eliminar la subcategoría «{{ s.name }}»? Los productos que ya la tenían puesta no se modifican, solo deja de aparecer para elegirla de nuevo.');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="subtitle" style="margin-bottom:14px;">Todavía no cargaste subcategorías de {{ cat.name }}.</p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('admin_new_subcategory') }}" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <input type="hidden" name="category_id" value="{{ cat.id }}">
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:200px;">
+        <label>Nueva subcategoría de {{ cat.name }}</label>
+        <input type="text" name="name" placeholder="Ej: Whey">
+      </div>
+      <button class="btn btn-outline btn-sm" type="submit">+ Agregar</button>
+    </form>
+  </div>
+  {% endfor %}
+{% endblock %}

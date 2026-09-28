@@ -1,0 +1,34 @@
+{% extends "admin_base.html" %}
+{% block title %}Detalle de gasto{% endblock %}
+{% block content %}
+  <h1>Detalle del gasto</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_gastos') }}">&larr; Volver a Gastos</a></p>
+
+  <div class="card">
+    <p><strong>{{ expense.provider_name or expense.service_category }}</strong></p>
+    <p class="subtitle" style="margin-bottom:4px;">{{ expense.expense_date.strftime("%d/%m/%Y") if expense.expense_date else "" }} · {{ expense.description or "" }}</p>
+    <p style="font-size:1.3rem;font-weight:700;">${{ "%.2f"|format(expense.amount) }}</p>
+  </div>
+
+  {% if items %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Producto</th><th>Cantidad</th><th>Costo unit.</th><th>Subtotal</th></tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td>{{ it.product_name }}{% if it.product_id %} <span class="badge badge-on" style="margin-left:6px;">Vinculado al catálogo</span>{% endif %}</td>
+          <td>{{ it.qty }}</td>
+          <td>${{ "%.2f"|format(it.unit_cost) }}</td>
+          <td>${{ "%.2f"|format(it.unit_cost * it.qty) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Este gasto no tiene productos desglosados, solo el monto total.</div>
+  {% endif %}
+{% endblock %}

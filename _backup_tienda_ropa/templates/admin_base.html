@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Panel admin{% endblock %} · Vua Showroom</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-bg:#f3ebe0; --color-card:#fffdf8; --color-primary-dark:#6b4f3f;
+    --color-dark:#2b2119; --color-muted:#8a7a6c; --color-border:#ddcab4;
+    --radius:12px; --shadow:0 4px 14px rgba(46,42,40,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;
+    background:var(--color-bg); color:var(--color-dark); margin:0;
+  }
+  .brand, h1, h2, h3{ font-family:'Poppins','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif; }
+  a{color:inherit;text-decoration:none;}
+  .admin-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 28px;background:#fff;border-bottom:1px solid var(--color-border);
+  }
+  .admin-header .brand{font-weight:700;letter-spacing:1px;color:var(--color-primary-dark);display:flex;align-items:center;gap:6px;}
+  .brand-logo{height:30px;width:auto;display:block;}
+  .admin-nav{display:flex;gap:20px;font-size:0.9rem;font-weight:600;}
+  .admin-nav a:hover{color:var(--color-primary-dark);}
+  .admin-container{max-width:1000px;margin:32px auto;padding:0 24px;}
+  .card{background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:24px;}
+  .btn{
+    display:inline-block;padding:10px 20px;border-radius:24px;font-weight:600;font-size:0.85rem;
+    border:none;cursor:pointer;background:var(--color-primary-dark);color:#fff;
+  }
+  .btn:hover{background:#57402f;}
+  .btn-outline{background:transparent;border:1.5px solid var(--color-border);color:var(--color-dark);}
+  .btn-danger{background:#b34747;}
+  .btn-sm{padding:6px 14px;font-size:0.78rem;}
+  table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--color-border);}
+  th{color:var(--color-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;}
+  img.thumb{width:44px;height:54px;object-fit:cover;border-radius:6px;background:#eee;}
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-weight:600;font-size:0.85rem;margin-bottom:6px;}
+  .form-group input,.form-group select,.form-group textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--color-border);border-radius:8px;
+    font-size:0.9rem;font-family:inherit;
+  }
+  .flash{background:#fdf0d5;border:1px solid #eac97e;color:#7a5c14;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:0.88rem;}
+  .badge{padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;}
+  .badge-on{background:#e3f2e5;color:#357a41;}
+  .badge-off{background:#f3e3e3;color:#a33d3d;}
+  .actions{display:flex;gap:8px;}
+  h1{font-size:1.4rem;margin-bottom:4px;}
+  .subtitle{color:var(--color-muted);font-size:0.9rem;margin-bottom:20px;}
+  .range-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .range-tab{
+    padding:8px 16px;border-radius:20px;border:1.5px solid var(--color-border);
+    font-size:0.82rem;font-weight:600;color:var(--color-dark);background:#fff;
+  }
+  .range-tab:hover{border-color:var(--color-primary-dark);}
+  .range-tab.active{background:var(--color-primary-dark);border-color:var(--color-primary-dark);color:#fff;}
+  .range-tab-clear{color:var(--color-muted);border-style:dashed;}
+  .range-tab-clear:hover{color:#b34747;border-color:#b34747;}
+  .date-range-form{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+  .date-range-form .form-group{margin-bottom:0;}
+  .date-range-form input[type="date"]{width:auto;}
+
+  /* Stock: colores/talles de un mismo producto en línea, en vez de una
+     fila (y una foto repetida) por cada uno. */
+  .stock-variant-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .stock-variant-chip{
+    display:flex;align-items:center;gap:6px;background:var(--color-bg);
+    border:1px solid var(--color-border);border-radius:20px;padding:5px 10px 5px 12px;
+  }
+  .stock-variant-label{display:flex;align-items:center;gap:5px;font-size:0.8rem;white-space:nowrap;}
+  .stock-variant-chip input[type="number"]{width:58px;padding:5px 6px;font-size:0.82rem;}
+
+  /* Cuando un color tiene talles propios (matriz color x talle), se
+     agrupan visualmente bajo el nombre del color en vez de mezclarse
+     con los talles sueltos del producto. */
+  .stock-color-group{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    background:#f6f2ef;border:1px solid var(--color-border);border-radius:20px;
+    padding:6px 12px 6px 12px;
+  }
+  .stock-color-group > .stock-variant-label{font-weight:600;}
+  .stock-color-group .stock-variant-chip{background:#fff;}
+  .stock-add-size-form{display:flex;align-items:center;gap:4px;}
+  .stock-add-size-form input[type="text"]{width:56px;padding:5px 6px;font-size:0.78rem;}
+  .stock-add-size-form input[type="number"]{width:52px;padding:5px 6px;font-size:0.78rem;}
+
+  /* Caja: pantalla de "nueva venta" (buscador de productos a la
+     izquierda, carrito de la venta a la derecha) y el ticket imprimible. */
+  .pos-layout{display:flex;gap:20px;flex-wrap:wrap;}
+  .pos-search-col{flex:1 1 320px;min-width:280px;}
+  .pos-cart-col{flex:1 1 320px;min-width:280px;}
+  .pos-search-results{max-height:420px;overflow-y:auto;border:1px solid var(--color-border);border-radius:10px;}
+  .pos-search-item{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--color-border);
+    cursor:pointer;transition:background .15s;
+  }
+  .pos-search-item:last-child{border-bottom:none;}
+  .pos-search-item:hover{background:var(--color-bg);}
+  .pos-search-item img{width:38px;height:46px;object-fit:cover;border-radius:6px;background:#eee;flex-shrink:0;}
+  .pos-search-item .psi-info{flex:1;min-width:0;}
+  .pos-search-item .psi-name{font-size:0.88rem;font-weight:600;}
+  .pos-search-item .psi-meta{font-size:0.76rem;color:var(--color-muted);}
+  .pos-variant-picker{padding:10px 12px;background:var(--color-bg);border-bottom:1px solid var(--color-border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .pos-variant-picker select{width:auto;padding:6px 10px;font-size:0.82rem;}
+  .pos-cart-item{
+    display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);
+  }
+  .pos-cart-item .pci-info{flex:1;min-width:0;font-size:0.86rem;}
+  .pos-cart-item .pci-variant{font-size:0.76rem;color:var(--color-muted);}
+  .pos-cart-item .pci-qty{display:flex;align-items:center;gap:6px;}
+  .pos-cart-item .pci-qty button{width:24px;height:24px;border:1px solid var(--color-border);border-radius:6px;background:#fff;font-weight:700;cursor:pointer;}
+  .pos-cart-item .pci-price{font-weight:700;font-size:0.88rem;white-space:nowrap;}
+  .pos-cart-item .pci-remove{color:#b34747;font-size:0.78rem;text-decoration:underline;cursor:pointer;background:none;border:none;}
+  .pos-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:14px;margin-top:6px;border-top:1.5px solid var(--color-border);font-size:1.15rem;font-weight:700;}
+  .pos-empty{color:var(--color-muted);font-size:0.88rem;text-align:center;padding:24px 0;}
+
+  /* Ticket imprimible: angosto como un comprobante de impresora térmica. */
+  .ticket-box{max-width:320px;margin:0 auto 28px;font-family:'Courier New',monospace;font-size:0.82rem;border:1px solid var(--color-border);}
+  .ticket-box h2{font-size:1.05rem;text-align:center;margin-bottom:2px;letter-spacing:0.5px;}
+  .ticket-box .ticket-sub{text-align:center;color:var(--color-muted);font-size:0.75rem;margin-bottom:12px;}
+  .ticket-box hr{border:none;border-top:1px dashed var(--color-border);margin:10px 0;}
+  .ticket-box .ticket-row{display:flex;justify-content:space-between;gap:8px;}
+  .ticket-box .ticket-total{font-weight:700;font-size:0.95rem;}
+  .ticket-items{width:100%;border-collapse:collapse;font-size:0.8rem;}
+  .ticket-items th{text-align:left;font-size:0.68rem;text-transform:uppercase;color:var(--color-muted);padding-bottom:4px;}
+  .ticket-items th:last-child, .ticket-items td:last-child{text-align:right;white-space:nowrap;}
+  .ticket-items td{padding:4px 0;vertical-align:top;}
+  .ticket-variant{color:var(--color-muted);font-size:0.74rem;}
+  .ticket-signature p{margin:14px 0 0;font-size:0.8rem;}
+  @media print{
+    .no-print{display:none !important;}
+    .admin-header, .admin-container > .flash{display:none !important;}
+    .ticket-box{max-width:none;border:none;margin-bottom:0;}
+    .ticket-copy{page-break-after:always;}
+    .ticket-copy:last-child{page-break-after:auto;}
+  }
+
+  /* Celular: header y nav apilados, tablas con scroll horizontal en vez
+     de desbordarse, y un poco menos de padding para aprovechar la pantalla. */
+  @media(max-width:700px){
+    .admin-header{flex-direction:column;align-items:flex-start;gap:10px;padding:14px 16px;}
+    .admin-nav{gap:8px 16px;flex-wrap:wrap;font-size:0.85rem;}
+    .admin-container{margin:20px auto;padding:0 16px;}
+    .card{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    h1{font-size:1.2rem;}
+    table{font-size:0.82rem;}
+    th,td{padding:8px 6px;}
+    .actions{flex-wrap:wrap;}
+    .date-range-form{gap:10px;}
+    .date-range-form .form-group{flex:1 1 130px;}
+  }
+  @media(max-width:420px){
+    .range-tabs{gap:6px;}
+    .range-tab{padding:6px 12px;font-size:0.78rem;}
+    .btn-sm{padding:5px 10px;font-size:0.72rem;}
+    img.thumb{width:36px;height:44px;}
+  }
+</style>
+</head>
+<body>
+<div class="admin-header">
+  <span class="brand"><img src="/static/img/logo-vua.png" alt="Vua Showroom" class="brand-logo"> · admin</span>
+  <nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Productos</a>
+    <a href="{{ url_for('admin_stock') }}">Stock</a>
+    <a href="{{ url_for('admin_caja') }}">Caja</a>
+    <a href="{{ url_for('admin_reportes') }}">Reportes</a>
+    <a href="{{ url_for('admin_sets') }}">Conjuntos</a>
+    <a href="{{ url_for('admin_subcategories') }}">Subcategorías</a>
+    <a href="{{ url_for('admin_hero') }}">Portada</a>
+    <a href="{{ url_for('admin_orders') }}">Pedidos</a>
+    <a href="{{ url_for('admin_customers') }}">Clientes</a>
+    <a href="{{ url_for('admin_reviews') }}">Reseñas</a>
+    <a href="{{ url_for('admin_coupons') }}">Cupones</a>
+    <a href="{{ url_for('admin_shipping_zones') }}">Envíos</a>
+    <a href="{{ url_for('admin_stats') }}">Estadísticas</a>
+    <a href="{{ url_for('admin_payment_settings') }}">Medios de pago</a>
+    <a href="{{ url_for('admin_settings') }}">Configuración</a>
+    <a href="{{ url_for('admin_logout') }}">Salir</a>
+  </nav>
+</div>
+<div class="admin-container">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>

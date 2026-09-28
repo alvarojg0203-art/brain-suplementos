@@ -1,0 +1,51 @@
+{% extends "admin_base.html" %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+  <h1>Ganancias y gastos</h1>
+  <p class="subtitle">Junta las ventas online y las presenciales de Caja, y les resta los gastos registrados en el mismo período.</p>
+
+  <div class="range-tabs">
+    <a class="range-tab {% if rango == 'hoy' %}active{% endif %}" href="{{ url_for('admin_reportes', rango='hoy') }}">Hoy</a>
+    <a class="range-tab {% if rango == 'semana' %}active{% endif %}" href="{{ url_for('admin_reportes', rango='semana') }}">Esta semana</a>
+    <a class="range-tab {% if rango == 'mes' %}active{% endif %}" href="{{ url_for('admin_reportes', rango='mes') }}">Este mes</a>
+    <a class="range-tab {% if rango == 'todos' %}active{% endif %}" href="{{ url_for('admin_reportes', rango='todos') }}">Todos</a>
+    {% if filtered %}<a class="range-tab range-tab-clear" href="{{ url_for('admin_reportes') }}">✕ Limpiar filtros</a>{% endif %}
+    {% if filtered %}
+    <a class="range-tab" style="margin-left:auto;"
+       href="{{ url_for('admin_export_reportes', rango=rango, desde=desde_str, hasta=hasta_str) }}">⬇ Exportar a PDF</a>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('admin_reportes') }}" class="date-range-form">
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" name="desde" value="{{ desde_str or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta_str or '' }}">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar por fecha</button>
+  </form>
+
+  {% if not filtered %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Elegí "Hoy", "Esta semana", "Este mes", "Todos", o un rango de fechas puntual arriba para ver el reporte.
+  </div>
+  {% else %}
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;">
+      <div><span class="subtitle" style="margin:0;">Ventas online</span><br><strong>${{ "%.2f"|format(report.ventas_online) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Ventas presenciales</span><br><strong>${{ "%.2f"|format(report.ventas_local) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Gastos</span><br><strong style="color:#b34747;">-${{ "%.2f"|format(report.gastos) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Costo de mercadería vendida</span><br><strong style="color:#b34747;">-${{ "%.2f"|format(report.costo_mercaderia) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Resultado</span><br><strong style="font-size:1.3rem;color:{{ '#357a41' if report.resultado >= 0 else '#b34747' }};">${{ "%.2f"|format(report.resultado) }}</strong></div>
+    </div>
+    {% if report.costo_incompleto %}
+    <p class="subtitle" style="margin-top:16px;margin-bottom:0;">
+      Ojo: hay productos activos sin "Precio de costo" cargado, así que el costo de mercadería (y por lo tanto el resultado) es una estimación incompleta, no un número exacto. Cargá el precio de costo en cada producto desde <a href="{{ url_for('admin_dashboard') }}">Productos → Editar</a> para que sea más preciso.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

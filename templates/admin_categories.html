@@ -1,0 +1,75 @@
+{% extends "admin_base.html" %}
+{% block title %}Categorías{% endblock %}
+{% block content %}
+  <h1>Categorías</h1>
+  <p class="subtitle">Las categorías del catálogo (Proteínas, Creatina, Barritas, etc). Se muestran en la tienda en el orden de esta lista. Para subtipos dentro de una categoría (ej: "Whey" dentro de Proteínas), usá <a href="{{ url_for('admin_subcategories') }}">Subcategorías</a>.</p>
+
+  {% if categories %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Foto</th>
+          <th>Nombre</th>
+          <th>Slug</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td>
+            {% if c.image_url %}
+              <img class="thumb" src="{{ c.image_url }}" alt="" style="border-radius:50%;">
+            {% else %}
+              <span style="font-size:1.4rem;">{{ c.icon or "—" }}</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ c.name }}</strong></td>
+          <td style="color:#8a7a6c;font-size:0.85rem;">{{ c.slug }}</td>
+          <td>
+            {% if c.active %}<span class="badge badge-on">Visible</span>
+            {% else %}<span class="badge badge-off">Oculta</span>{% endif %}
+          </td>
+          <td class="actions">
+            <a class="btn btn-outline btn-sm" href="{{ url_for('admin_edit_category', category_id=c.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('admin_toggle_category', category_id=c.id) }}">
+              <button class="btn btn-outline btn-sm" type="submit">{{ "Ocultar" if c.active else "Mostrar" }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_delete_category', category_id=c.id) }}"
+                  onsubmit="return confirm('¿Eliminar la categoría «{{ c.name }}»? Solo se puede borrar si no tiene productos cargados.');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no hay ninguna categoría cargada. Agregá la primera abajo.</div>
+  {% endif %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Nueva categoría</h3>
+    <form method="post" action="{{ url_for('admin_new_category') }}" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="form-group" style="margin-bottom:0;width:90px;">
+        <label>Ícono (opcional)</label>
+        <input type="text" name="icon" placeholder="🥛" maxlength="10">
+      </div>
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:220px;">
+        <label>Nombre</label>
+        <input type="text" name="name" required placeholder="Ej: Aminoácidos">
+      </div>
+      <div class="form-group" style="margin-bottom:0;min-width:220px;">
+        <label>Foto (opcional)</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+      </div>
+      <button class="btn" type="submit">Crear categoría</button>
+    </form>
+    <p style="font-size:0.78rem;color:#8a7a6c;margin-top:10px;">
+      Si no subís una foto, se muestra el ícono (o nada) en su lugar. La foto se puede agregar o cambiar después desde "Editar". Para que se vea prolija en la tarjeta, funciona mejor una imagen cuadrada.
+    </p>
+  </div>
+{% endblock %}

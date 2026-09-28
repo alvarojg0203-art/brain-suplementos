@@ -1,0 +1,63 @@
+{% extends "admin_base.html" %}
+{% block title %}Editar pedido #{{ order.id }}{% endblock %}
+{% block content %}
+  <h1>Editar pedido #{{ order.id }}</h1>
+  <p class="subtitle">
+    <a href="{{ next_url }}">&larr; Volver a Pedidos</a>
+    · Cliente: {{ order.customer_name }} ({{ order.customer_phone }})
+  </p>
+  <p style="font-size:0.82rem;color:#8a7a6c;max-width:600px;margin-top:-10px;margin-bottom:20px;">
+    Bajá la cantidad de un producto (o ponela en 0 para sacarlo del pedido) si hubo una devolución parcial.
+    El total se recalcula solo con lo que quede. Si el pedido entero se canceló, usá "Cancelar" desde la
+    lista de Pedidos en vez de editarlo acá.
+  </p>
+
+  <form method="post">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio unit.</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td>
+              {{ it.product_name }}
+              {% if it.flavor_name %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ it.flavor_name }}</span>{% endif %}
+              {% if it.weight_label %}<br><span style="color:#8a7a6c;font-size:0.8rem;">Peso {{ it.weight_label }}</span>{% endif %}
+            </td>
+            <td>${{ "%.2f"|format(it.unit_price) }}</td>
+            <td>
+              <input type="hidden" name="item_id" value="{{ it.id }}">
+              <input type="number" name="item_qty" min="0" value="{{ it.qty }}" style="width:80px;">
+            </td>
+            <td>${{ "%.2f"|format(it.unit_price * it.qty) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="max-width:520px;">
+      <div class="form-group">
+        <label>Método de entrega</label>
+        <input type="text" name="delivery_method" value="{{ order.delivery_method or '' }}">
+      </div>
+      <div class="form-group">
+        <label>Dirección de entrega</label>
+        <input type="text" name="delivery_address" value="{{ order.delivery_address or '' }}">
+      </div>
+      <p style="font-size:0.78rem;color:#8a7a6c;margin-top:-6px;margin-bottom:14px;">
+        El descuento (${{ "%.2f"|format(order.discount_amount or 0) }}) y el envío (${{ "%.2f"|format(order.shipping_cost or 0) }})
+        se mantienen igual y se restan/suman solos al total nuevo.
+      </p>
+      <button class="btn" type="submit">Guardar cambios</button>
+    </div>
+  </form>
+{% endblock %}

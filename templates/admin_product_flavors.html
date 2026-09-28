@@ -1,0 +1,108 @@
+{% extends "admin_base.html" %}
+{% block title %}Sabores · {{ product.name }}{% endblock %}
+{% block content %}
+  <h1>Sabores de «{{ product.name }}»</h1>
+  <p class="subtitle">
+    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}">&larr; Volver al producto</a>
+    · <a href="{{ url_for('admin_stock') }}">Ir a Stock</a>
+    · Si este producto no tiene ningún sabor cargado, se sigue vendiendo con la foto y el stock de siempre.
+  </p>
+  <p style="font-size:0.82rem;color:#8a7a6c;max-width:640px;margin-top:-6px;margin-bottom:16px;">
+    Acá cargás los sabores, sus fotos y sus pesos. La cantidad de stock de cada uno se carga siempre desde <strong>Stock</strong>, para tener un solo lugar donde cambiarlo.
+  </p>
+
+  {% for c in colors %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="width:22px;height:22px;border-radius:50%;display:inline-block;border:1px solid var(--color-border);background:{{ c.flavor_color_hex }};"></span>
+        <strong>{{ c.flavor_name }}</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span style="font-size:0.82rem;color:var(--color-muted);">Stock: {{ c.stock }} <a href="{{ url_for('admin_stock') }}" style="margin-left:4px;">(cambiar en Stock)</a></span>
+        <form method="post" action="{{ url_for('admin_delete_flavor', flavor_id=c.id) }}"
+              onsubmit="return confirm('¿Eliminar el sabor {{ c.flavor_name }} y todas sus fotos? No se puede deshacer.');">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <button class="btn btn-danger btn-sm" type="submit">Eliminar sabor</button>
+        </form>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+      {% for img in c.images %}
+      <div style="position:relative;">
+        <img src="{{ img.image_url }}" style="width:90px;height:110px;object-fit:cover;border-radius:8px;background:#eee;display:block;">
+        <form method="post" action="{{ url_for('admin_delete_flavor_image', image_id=img.id) }}" style="position:absolute;top:4px;right:4px;">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <input type="hidden" name="flavor_id" value="{{ c.id }}">
+          <button type="submit" title="Borrar foto"
+                  style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:0.75rem;cursor:pointer;">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+
+    <form method="post" action="{{ url_for('admin_add_flavor_images', flavor_id=c.id) }}" enctype="multipart/form-data" style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <input type="hidden" name="product_id" value="{{ product.id }}">
+      <input type="file" name="images" accept=".png,.jpg,.jpeg,.webp,.gif" multiple style="max-width:280px;">
+      <button class="btn btn-outline btn-sm" type="submit">+ Agregar fotos</button>
+    </form>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--color-border);">
+      <p style="font-size:0.85rem;font-weight:600;margin-bottom:8px;">Pesos de este sabor</p>
+      {% if c.sizes %}
+        <p style="font-size:0.78rem;color:var(--color-muted);margin-bottom:10px;">
+          Este sabor se vende por peso. La cantidad de cada peso se carga desde <a href="{{ url_for('admin_stock') }}">Stock</a>.
+        </p>
+        <div class="stock-variant-row">
+          {% for s in c.sizes %}
+          <div class="stock-variant-chip">
+            <span class="stock-variant-label">Peso {{ s.weight_label }}</span>
+            <span style="font-size:0.82rem;color:var(--color-muted);">Stock: {{ s.stock }}</span>
+            <form method="post" action="{{ url_for('admin_delete_weight', weight_id=s.id) }}"
+                  onsubmit="return confirm('¿Eliminar el peso {{ s.weight_label }} de este sabor?');" style="display:inline;">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <input type="hidden" name="next" value="{{ url_for('admin_product_flavors', product_id=product.id) }}">
+              <button class="btn btn-danger btn-sm" type="submit" title="Eliminar peso">✕</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size:0.78rem;color:var(--color-muted);margin-bottom:10px;">
+          Este sabor todavía no tiene pesos. Si lo dejás así, se vende con el stock general de este sabor (se carga desde <a href="{{ url_for('admin_stock') }}">Stock</a>). Si agregás pesos, el stock pasa a manejarse por cada peso por separado.
+        </p>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin_add_flavor_weight', flavor_id=c.id) }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <input type="hidden" name="next" value="{{ url_for('admin_product_flavors', product_id=product.id) }}">
+        <input type="text" name="weight_label" placeholder="Ej: 950g" style="width:160px;padding:7px 10px;">
+        <button class="btn btn-outline btn-sm" type="submit">+ Agregar peso</button>
+      </form>
+      <p style="font-size:0.76rem;color:var(--color-muted);margin-top:6px;">El peso se agrega con stock 0; cargá la cantidad después desde <a href="{{ url_for('admin_stock') }}">Stock</a>.</p>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:var(--color-muted);">Este producto todavía no tiene sabores cargados.</div>
+  {% endfor %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Agregar sabor nuevo</h3>
+    <form method="post" action="{{ url_for('admin_add_flavor', product_id=product.id) }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Nombre del sabor</label>
+        <input type="text" name="flavor_name" required placeholder="Ej: Rosa viejo">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+        <label style="margin:0;">Color del circulito</label>
+        <input type="color" name="flavor_color_hex" value="#a9836b" style="width:52px;height:38px;padding:2px;">
+      </div>
+      <div class="form-group">
+        <label>Fotos de este sabor (opcional, podés elegir varias)</label>
+        <input type="file" name="images" accept=".png,.jpg,.jpeg,.webp,.gif" multiple>
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Si no cargás ninguna, ese sabor se muestra con la foto principal del producto. Podés agregarle fotos propias después desde acá mismo.</p>
+      </div>
+      <p style="font-size:0.78rem;color:#8a7a6c;margin-top:-6px;margin-bottom:14px;">El sabor se crea con stock 0. Cargá la cantidad (o sus pesos) después desde <a href="{{ url_for('admin_stock') }}">Stock</a>.</p>
+      <button class="btn" type="submit">Agregar sabor</button>
+    </form>
+  </div>
+{% endblock %}

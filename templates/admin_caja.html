@@ -1,0 +1,583 @@
+{% extends "admin_base.html" %}
+{% block title %}Caja{% endblock %}
+{% block content %}
+  <h1>Caja</h1>
+  <p class="subtitle">Ventas presenciales en el local, aparte de las que llegan por la tienda online. Para vender primero hay que abrir la caja.</p>
+
+  {% if not register %}
+  <div class="card caja-open-hero">
+    <span class="caja-open-icon">🗄️</span>
+    <h3>Abrir caja</h3>
+    <p>Contá el efectivo con el que arrancás para poder empezar a vender.</p>
+    <form method="post" action="{{ url_for('admin_abrir_caja') }}">
+      <div class="form-group">
+        <label>Monto inicial</label>
+        <input type="number" name="opening_amount" min="0" step="0.01" value="0" required placeholder="Ej: 20000">
+      </div>
+      <button class="btn" type="submit">Abrir caja</button>
+    </form>
+  </div>
+  {% else %}
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <div>
+        <span class="badge badge-on">Caja abierta</span>
+        <span class="subtitle" style="margin-left:8px;">Desde {{ register.opened_at.strftime('%d/%m/%Y %H:%M') }}</span>
+      </div>
+      <div class="actions">
+        {% if sales or expenses %}
+        <a class="btn btn-outline btn-sm" href="{{ url_for('admin_export_caja') }}">⬇ Exportar a PDF</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px;">
+      <div><span class="subtitle" style="margin:0;">Monto inicial</span><br><strong>${{ "%.2f"|format(register.opening_amount) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Ventas en efectivo</span><br><strong>${{ "%.2f"|format(totals.ventas_efectivo) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Ventas con otro medio</span><br><strong>${{ "%.2f"|format(totals.ventas_otras) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Gastos</span><br><strong>${{ "%.2f"|format(totals.gastos) }}</strong></div>
+      <div><span class="subtitle" style="margin:0;">Efectivo esperado en caja</span><br><strong style="color:#357a41;">${{ "%.2f"|format(totals.esperado) }}</strong></div>
+    </div>
+
+    <details style="margin-bottom:6px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--color-primary-dark);">Cerrar caja</summary>
+      <form method="post" action="{{ url_for('admin_cerrar_caja') }}" style="margin-top:14px;max-width:420px;"
+            onsubmit="return confirm('¿Cerrar la caja? No vas a poder cargar más ventas presenciales hasta abrir una nueva.');">
+        <div class="form-group">
+          <label>Efectivo contado al cerrar</label>
+          <input type="number" name="closing_amount" min="0" step="0.01" required placeholder="Contá la plata que hay en la caja">
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <input type="text" name="notes" placeholder="Ej: faltan $500, se los prestó a...">
+        </div>
+        <button class="btn btn-danger" type="submit">Cerrar caja</button>
+      </form>
+    </details>
+  </div>
+
+  <div class="card pos-panel">
+    <div class="pos-panel-header">
+      <span class="pos-panel-icon">🛒</span>
+      <div>
+        <h3>Vender</h3>
+        <span>Buscá por nombre o escaneá el código de barras con la pistola</span>
+      </div>
+    </div>
+
+    <div class="pos-layout">
+      <div class="pos-search-col">
+        <div class="form-group" style="margin-bottom:10px;">
+          <input type="text" id="posSearchInput" placeholder="Nombre del producto, o escaneá el código de barras..."
+                 oninput="posSearchDebounced()" onkeydown="posSearchKeydown(event)" autocomplete="off">
+          <p style="font-size:0.76rem;color:#8a7a6c;margin-top:6px;">Mostrando todos los productos activos. Escribí para filtrar por nombre, o escaneá un código de barras (agrega el producto directo).</p>
+        </div>
+        <div class="pos-search-results" id="posResults">
+          <p class="pos-empty">Cargando productos...</p>
+        </div>
+      </div>
+
+      <div class="pos-cart-col">
+        <h4 style="margin:0 0 10px;font-size:0.92rem;">Venta actual</h4>
+        <div id="posCart">
+          <p class="pos-empty">Todavía no agregaste ningún producto.</p>
+        </div>
+        <div class="pos-discount-line" id="posDiscountLine" style="display:none;"></div>
+        <div class="pos-total">
+          <span>Total</span>
+          <span id="posTotal">$0</span>
+        </div>
+
+        <div class="form-group" style="margin-top:18px;">
+          <label>Cliente</label>
+          <div class="customer-toggle">
+            <button type="button" class="range-tab active" id="custTabOcasional" onclick="posSetCustomerMode('ocasional')">Ocasional</button>
+            <button type="button" class="range-tab" id="custTabRegistrado" onclick="posSetCustomerMode('registrado')">Cliente registrado</button>
+          </div>
+          <div id="custOcasionalBox">
+            <input type="text" id="posCustomerName" placeholder="Nombre (opcional)">
+          </div>
+          <div id="custRegistradoBox" style="display:none;">
+            <input type="text" id="custSearchInput" placeholder="Buscar por nombre o teléfono..." oninput="custSearchDebounced()" autocomplete="off">
+            <div class="customer-search-results" id="custSearchResults"></div>
+            <div id="custSelectedBox"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Medio de pago</label>
+          <select id="posPaymentMethod" onchange="posOnPaymentMethodChange()">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta de débito">Tarjeta de débito</option>
+            <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Mercado Pago">Mercado Pago (QR/otro)</option>
+            <option value="Cuenta corriente">Cuenta corriente (fiado)</option>
+          </select>
+          <p class="pos-cuenta-hint" id="posCuentaHint">Para vender a cuenta corriente primero elegí un cliente registrado, arriba.</p>
+        </div>
+
+        <button class="btn" style="width:100%;" onclick="posSubmitSale()" id="posSubmitBtn">Confirmar venta e imprimir ticket</button>
+        <p class="pos-empty" id="posError" style="color:#b34747;display:none;"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">Registrar gasto</h3>
+    <form method="post" action="{{ url_for('admin_nuevo_gasto') }}" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Categoría</label>
+        <select name="category">
+          {% for c in expense_categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:180px;">
+        <label>Descripción</label>
+        <input type="text" name="description" placeholder="Ej: medialunas para el mediodía">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Monto</label>
+        <input type="number" name="amount" min="0.01" step="0.01" required placeholder="Ej: 5000">
+      </div>
+      <button class="btn btn-outline btn-sm" type="submit">+ Registrar</button>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <h3 style="margin:18px 20px 0;">Ventas de esta caja</h3>
+    {% if sales %}
+    <table>
+      <thead><tr><th>Hora</th><th>Cliente</th><th>Medio de pago</th><th>Total</th><th></th><th></th></tr></thead>
+      <tbody>
+        {% for s in sales %}
+        <tr style="{% if s.status == 'cancelada' %}opacity:0.55;{% endif %}">
+          <td>{{ s.created_at.strftime('%H:%M') }}</td>
+          <td>{{ s.customer_name or s.registered_customer_name or "Consumidor final" }}</td>
+          <td>{{ s.payment_method }}</td>
+          <td>
+            {% if s.status == 'cancelada' %}<span style="text-decoration:line-through;">${{ "%.2f"|format(s.total) }}</span> <span class="badge badge-off">Cancelada</span>
+            {% else %}${{ "%.2f"|format(s.total) }}{% endif %}
+          </td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('admin_ticket_venta', sale_id=s.id) }}" target="_blank">Ver ticket</a></td>
+          <td>
+            {% if s.status != 'cancelada' %}
+            <form method="post" action="{{ url_for('admin_cancel_pos_sale', sale_id=s.id) }}"
+                  onsubmit="return confirm('¿Cancelar esta venta? El stock vendido se devuelve automáticamente.');">
+              <input type="hidden" name="next" value="{{ url_for('admin_caja') }}">
+              <button class="btn btn-danger btn-sm" type="submit">Cancelar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="subtitle" style="padding:0 20px 18px;">Todavía no cargaste ninguna venta en esta caja.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <h3 style="margin:18px 20px 0;">Gastos de esta caja</h3>
+    {% if expenses %}
+    <table>
+      <thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Monto</th></tr></thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td>{{ e.created_at.strftime('%H:%M') }}</td>
+          <td>{{ e.category }}</td>
+          <td>{{ e.description or "—" }}</td>
+          <td>${{ "%.2f"|format(e.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="subtitle" style="padding:0 20px 18px;">Todavía no registraste ningún gasto en esta caja.</p>
+    {% endif %}
+  </div>
+
+  {% endif %}
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <h3 style="margin:18px 20px 0;">Historial de cajas</h3>
+    {% if registers %}
+    <table>
+      <thead>
+        <tr><th>Apertura</th><th>Cierre</th><th>Monto inicial</th><th>Contado al cerrar</th><th>Diferencia</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for r in registers %}
+        <tr>
+          <td>{{ r.opened_at.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ r.closed_at.strftime('%d/%m/%Y %H:%M') if r.closed_at else "—" }}</td>
+          <td>${{ "%.2f"|format(r.opening_amount) }}</td>
+          <td>{{ "$" ~ "%.2f"|format(r.closing_amount) if r.closing_amount is not none else "—" }}</td>
+          <td>
+            {% if r.difference is not none %}
+              {% if r.difference == 0 %}<span style="color:#357a41;">Coincide</span>
+              {% elif r.difference > 0 %}<span style="color:#357a41;">+${{ "%.2f"|format(r.difference) }}</span>
+              {% else %}<span style="color:#b34747;">-${{ "%.2f"|format(-r.difference) }}</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if r.status == 'abierta' %}<span class="badge badge-on">Abierta</span>
+            {% else %}<span class="badge badge-off">Cerrada</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if registers|length >= 15 %}
+    <p class="subtitle" style="padding:12px 20px 18px;"><a href="{{ url_for('admin_caja_historial') }}">Ver historial completo &rarr;</a></p>
+    {% else %}
+    <p style="padding:0 20px 18px;"></p>
+    {% endif %}
+    {% else %}
+    <p class="subtitle" style="padding:0 20px 18px;">Todavía no se abrió ninguna caja.</p>
+    {% endif %}
+  </div>
+
+  {% if register %}
+  <script>
+    // El propio HTML ya trae la lista de productos activos calculada por
+    // el servidor, así que el panel de venta se ve con los productos
+    // puestos desde el primer instante, sin el cartel de "Cargando...".
+    const POS_INITIAL_PRODUCTS = {{ initial_products | tojson }};
+
+    let posCart = [];
+    let posSearchTimer = null;
+    let custSearchTimer = null;
+    let selectedCustomer = null; // {id, name, is_exclusive, discount_percent}
+
+    function posSearchDebounced(){
+      clearTimeout(posSearchTimer);
+      posSearchTimer = setTimeout(posSearch, 300);
+    }
+
+    if(Array.isArray(POS_INITIAL_PRODUCTS) && POS_INITIAL_PRODUCTS.length){
+      posRenderResults(POS_INITIAL_PRODUCTS);
+    } else {
+      posLoadAll();
+    }
+
+    async function posLoadAll(){
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Cargando productos...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar`);
+        posRenderResults(await res.json());
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo cargar el catálogo. Probá de nuevo.</p>`;
+      }
+    }
+
+    async function posSearch(){
+      const q = document.getElementById("posSearchInput").value.trim();
+      if(!q){ posLoadAll(); return; }
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Buscando...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        posRenderResults(data);
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo buscar. Probá de nuevo.</p>`;
+      }
+    }
+
+    // Enter en el buscador = escaneo de código de barras: la lectora
+    // "escribe" el código y manda Enter solita. Probamos primero un
+    // match exacto de código de barras; si no hay ninguno, lo tratamos
+    // como una búsqueda normal por si lo escribió a mano.
+    function posSearchKeydown(event){
+      if(event.key !== "Enter") return;
+      event.preventDefault();
+      posScan();
+    }
+
+    async function posScan(){
+      const input = document.getElementById("posSearchInput");
+      const value = input.value.trim();
+      if(!value) return;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?codigo=${encodeURIComponent(value)}`);
+        const data = await res.json();
+        if(data.length === 1){
+          posQuickAdd(data[0]);
+          input.value = "";
+          posLoadAll();
+          input.focus();
+          return;
+        }
+      }catch(err){ /* seguimos al fallback de búsqueda por nombre */ }
+      posSearch();
+    }
+
+    function posQuickAdd(product){
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+      } else {
+        window._posProducts = [product];
+        posRenderResults([product]);
+        posToggleVariant(0);
+      }
+    }
+
+    function posRenderResults(products){
+      const results = document.getElementById("posResults");
+      if(!products.length){
+        results.innerHTML = `<p class="pos-empty">No se encontró ningún producto activo con ese nombre.</p>`;
+        return;
+      }
+      results.innerHTML = products.map((p, i) => `
+        <div>
+          <div class="pos-search-item" onclick="posToggleVariant(${i})">
+            <img src="${p.image_url || 'https://placehold.co/80x100/eee/999?text=%20'}" alt="">
+            <div class="psi-info">
+              <div class="psi-name">${p.name}</div>
+              <div class="psi-meta">${formatMoney(p.price)} · stock ${p.stock}${p.colors.length ? " (elegí sabor)" : ""}</div>
+            </div>
+          </div>
+          <div id="posVariant${i}"></div>
+        </div>
+      `).join("");
+      window._posProducts = products;
+    }
+
+    function posToggleVariant(i){
+      const product = window._posProducts[i];
+      const box = document.getElementById(`posVariant${i}`);
+      if(box.innerHTML){ box.innerHTML = ""; return; }
+
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+        box.innerHTML = "";
+        return;
+      }
+
+      const flavorOptions = product.colors.map(c => `<option value="${c.id}">${c.name} (stock ${c.stock})</option>`).join("");
+      const weightOptions = product.sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+      box.innerHTML = `
+        <div class="pos-variant-picker">
+          ${product.colors.length ? `<select id="posFlavor${i}" onchange="posUpdateWeightsForFlavor(${i})">${flavorOptions}</select>` : ""}
+          <select id="posWeight${i}">${weightOptions}</select>
+          <button class="btn btn-outline btn-sm" onclick="posConfirmVariant(${i})">Agregar</button>
+        </div>
+      `;
+      if(product.colors.length) posUpdateWeightsForFlavor(i);
+    }
+
+    function posUpdateWeightsForFlavor(i){
+      const product = window._posProducts[i];
+      const flavorSelect = document.getElementById(`posFlavor${i}`);
+      const weightSelect = document.getElementById(`posWeight${i}`);
+      if(!flavorSelect || !weightSelect) return;
+      const sabor = product.colors.find(c => String(c.id) === flavorSelect.value);
+      const sizes = (sabor && sabor.sizes && sabor.sizes.length) ? sabor.sizes : product.sizes;
+      weightSelect.innerHTML = sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+    }
+
+    function posConfirmVariant(i){
+      const product = window._posProducts[i];
+      const flavorSelect = document.getElementById(`posFlavor${i}`);
+      const weightSelect = document.getElementById(`posWeight${i}`);
+      const sabor = flavorSelect ? product.colors.find(c => String(c.id) === flavorSelect.value) : null;
+      const weightList = (sabor && sabor.sizes && sabor.sizes.length) ? sabor.sizes : product.sizes;
+      const size = (weightSelect && weightList.length) ? weightList.find(s => String(s.id) === weightSelect.value) : null;
+      posAddToCart(product, sabor, size);
+      document.getElementById(`posVariant${i}`).innerHTML = "";
+    }
+
+    function posAddToCart(product, sabor, size){
+      const existing = posCart.find(it =>
+        it.product_id === product.id && it.flavor_id === (sabor ? sabor.id : null) && it.weight_id === (size ? size.id : null)
+      );
+      if(existing){ existing.qty += 1; }
+      else{
+        posCart.push({
+          product_id: product.id, name: product.name, unit_price: product.price, qty: 1,
+          flavor_id: sabor ? sabor.id : null, flavor_name: sabor ? sabor.name : null,
+          weight_id: size ? size.id : null, weight_label: size ? size.name : null,
+        });
+      }
+      posRenderCart();
+    }
+
+    function posChangeQty(index, delta){
+      posCart[index].qty += delta;
+      if(posCart[index].qty <= 0) posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    function posRemove(index){
+      posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    // Si hay un cliente exclusivo elegido, esto calcula el precio con su
+    // % de descuento ya aplicado — solo para mostrarlo en pantalla; el
+    // servidor vuelve a calcularlo igual (no confiamos en el navegador
+    // para el monto final que se cobra).
+    function effectiveUnitPrice(it){
+      if(selectedCustomer && selectedCustomer.is_exclusive && selectedCustomer.discount_percent > 0){
+        return it.unit_price * (1 - selectedCustomer.discount_percent / 100);
+      }
+      return it.unit_price;
+    }
+
+    function posRenderCart(){
+      const box = document.getElementById("posCart");
+      const hasDiscount = !!(selectedCustomer && selectedCustomer.is_exclusive && selectedCustomer.discount_percent > 0);
+      if(!posCart.length){
+        box.innerHTML = `<p class="pos-empty">Todavía no agregaste ningún producto.</p>`;
+      } else {
+        box.innerHTML = posCart.map((it, i) => `
+          <div class="pos-cart-item">
+            <div class="pci-info">
+              <div>${it.name}</div>
+              ${(it.flavor_name || it.weight_label) ? `<div class="pci-variant">${[it.flavor_name, it.weight_label ? "Peso " + it.weight_label : null].filter(Boolean).join(" · ")}</div>` : ""}
+              <button class="pci-remove" onclick="posRemove(${i})">Quitar</button>
+            </div>
+            <div class="pci-qty">
+              <button type="button" onclick="posChangeQty(${i}, -1)">-</button>
+              <span>${it.qty}</span>
+              <button type="button" onclick="posChangeQty(${i}, 1)">+</button>
+            </div>
+            <div class="pci-price">${formatMoney(effectiveUnitPrice(it) * it.qty)}</div>
+          </div>
+        `).join("");
+      }
+      const rawTotal = posCart.reduce((sum, it) => sum + it.unit_price * it.qty, 0);
+      const finalTotal = posCart.reduce((sum, it) => sum + effectiveUnitPrice(it) * it.qty, 0);
+      const discountLine = document.getElementById("posDiscountLine");
+      if(hasDiscount && posCart.length){
+        discountLine.style.display = "flex";
+        discountLine.innerHTML = `<span>⭐ Descuento cliente exclusivo (${selectedCustomer.discount_percent}%)</span><span>-${formatMoney(rawTotal - finalTotal)}</span>`;
+      } else {
+        discountLine.style.display = "none";
+      }
+      document.getElementById("posTotal").textContent = formatMoney(finalTotal);
+    }
+
+    function formatMoney(n){ return "$" + Number(n).toLocaleString("es-AR"); }
+
+    // --- Cliente: ocasional (nombre libre) vs registrado (búsqueda) ---
+    function posSetCustomerMode(mode){
+      document.getElementById("custTabOcasional").classList.toggle("active", mode === "ocasional");
+      document.getElementById("custTabRegistrado").classList.toggle("active", mode === "registrado");
+      document.getElementById("custOcasionalBox").style.display = mode === "ocasional" ? "" : "none";
+      document.getElementById("custRegistradoBox").style.display = mode === "registrado" ? "" : "none";
+      if(mode === "ocasional") custClear();
+    }
+
+    function custSearchDebounced(){
+      clearTimeout(custSearchTimer);
+      custSearchTimer = setTimeout(custSearch, 300);
+    }
+
+    async function custSearch(){
+      const q = document.getElementById("custSearchInput").value.trim();
+      const box = document.getElementById("custSearchResults");
+      if(q.length < 2){ box.innerHTML = ""; return; }
+      try{
+        const res = await fetch(`/admin/api/clientes-buscar?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if(!data.length){
+          box.innerHTML = `<div class="customer-search-item" style="color:#8a7a6c;cursor:default;">Sin resultados</div>`;
+          return;
+        }
+        box.innerHTML = data.map((c, i) => `
+          <div class="customer-search-item" onclick='custSelectFromResults(${i})'>
+            ${c.name}${c.phone ? " · " + c.phone : ""}${(c.is_exclusive && c.discount_percent > 0) ? ` <span class="pos-discount-badge">⭐ ${c.discount_percent}%</span>` : ""}
+          </div>
+        `).join("");
+        window._custResults = data;
+      }catch(err){
+        box.innerHTML = `<div class="customer-search-item" style="color:#b34747;cursor:default;">No se pudo buscar</div>`;
+      }
+    }
+
+    function custSelectFromResults(i){
+      const c = window._custResults[i];
+      selectedCustomer = c;
+      document.getElementById("custSearchResults").innerHTML = "";
+      document.getElementById("custSearchInput").value = "";
+      renderSelectedCustomer();
+      posRenderCart();
+      posOnPaymentMethodChange();
+    }
+
+    function custClear(){
+      selectedCustomer = null;
+      document.getElementById("custSelectedBox").innerHTML = "";
+      posRenderCart();
+      posOnPaymentMethodChange();
+    }
+
+    function renderSelectedCustomer(){
+      const box = document.getElementById("custSelectedBox");
+      if(!selectedCustomer){ box.innerHTML = ""; return; }
+      const badge = (selectedCustomer.is_exclusive && selectedCustomer.discount_percent > 0)
+        ? `<span class="pos-discount-badge">⭐ ${selectedCustomer.discount_percent}% off</span>` : "";
+      box.innerHTML = `<div class="customer-chip"><span><strong>${selectedCustomer.name}</strong>${badge}</span><button type="button" onclick="custClear()">Quitar</button></div>`;
+    }
+
+    function posOnPaymentMethodChange(){
+      const method = document.getElementById("posPaymentMethod").value;
+      const hint = document.getElementById("posCuentaHint");
+      hint.style.display = (method === "Cuenta corriente" && !selectedCustomer) ? "block" : "none";
+    }
+
+    async function posSubmitSale(){
+      const errorEl = document.getElementById("posError");
+      errorEl.style.display = "none";
+      if(!posCart.length){
+        errorEl.textContent = "Agregá al menos un producto.";
+        errorEl.style.display = "block";
+        return;
+      }
+      const paymentMethod = document.getElementById("posPaymentMethod").value;
+      if(paymentMethod === "Cuenta corriente" && !selectedCustomer){
+        errorEl.textContent = "Para vender a cuenta corriente primero elegí un cliente registrado.";
+        errorEl.style.display = "block";
+        return;
+      }
+      const btn = document.getElementById("posSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+      try{
+        const res = await fetch("{{ url_for('admin_nueva_venta') }}", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            items: posCart,
+            payment_method: paymentMethod,
+            customer_name: selectedCustomer ? null : document.getElementById("posCustomerName").value,
+            customer_id: selectedCustomer ? selectedCustomer.id : null,
+          }),
+        });
+        const data = await res.json();
+        if(!res.ok || data.error){
+          errorEl.textContent = data.error || "No se pudo registrar la venta.";
+          errorEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Confirmar venta e imprimir ticket";
+          return;
+        }
+        if(data.warning){ alert(data.warning); }
+        window.open(`/admin/caja/venta/${data.sale_id}/ticket`, "_blank");
+        window.location.reload();
+      }catch(err){
+        errorEl.textContent = "No se pudo conectar con el servidor.";
+        errorEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Confirmar venta e imprimir ticket";
+      }
+    }
+  </script>
+  {% endif %}
+{% endblock %}

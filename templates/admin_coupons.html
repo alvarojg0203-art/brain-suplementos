@@ -1,0 +1,73 @@
+{% extends "admin_base.html" %}
+{% block title %}Cupones{% endblock %}
+{% block content %}
+  <h1>Cupones de descuento</h1>
+  <p class="subtitle">Códigos que el cliente puede cargar en el checkout para un % de descuento extra sobre el total.</p>
+
+  {% if coupons %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>% off</th>
+          <th>Vence</th>
+          <th>Usos</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in coupons %}
+        <tr>
+          <td><strong>{{ c.code }}</strong></td>
+          <td>{{ c.percent_off|int }}%</td>
+          <td>{{ c.expires_at.strftime("%d/%m/%Y") if c.expires_at else "Sin vencimiento" }}</td>
+          <td>{{ c.used_count }}{% if c.usage_limit %} / {{ c.usage_limit }}{% endif %}</td>
+          <td>
+            {% if not c.active %}<span class="badge badge-off">Inactivo</span>
+            {% elif c.expires_at and c.expires_at < today %}<span class="badge badge-off">Vencido</span>
+            {% elif c.usage_limit and c.used_count >= c.usage_limit %}<span class="badge badge-off">Agotado</span>
+            {% else %}<span class="badge badge-on">Activo</span>{% endif %}
+          </td>
+          <td class="actions">
+            <form method="post" action="{{ url_for('admin_toggle_coupon', coupon_id=c.id) }}">
+              <button class="btn btn-outline btn-sm" type="submit">{{ "Desactivar" if c.active else "Activar" }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_delete_coupon', coupon_id=c.id) }}"
+                  onsubmit="return confirm('¿Eliminar el cupón {{ c.code }}?');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no creaste ningún cupón.</div>
+  {% endif %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Nuevo cupón</h3>
+    <form method="post" action="{{ url_for('admin_new_coupon') }}">
+      <div class="form-group">
+        <label>Código</label>
+        <input type="text" name="code" required placeholder="Ej: BIENVENIDA10" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label>% de descuento</label>
+        <input type="number" name="percent_off" min="1" max="100" required placeholder="Ej: 10">
+      </div>
+      <div class="form-group">
+        <label>Vencimiento (opcional)</label>
+        <input type="date" name="expires_at">
+      </div>
+      <div class="form-group">
+        <label>Límite de usos (opcional)</label>
+        <input type="number" name="usage_limit" min="1" placeholder="Ej: 50 (dejalo vacío para sin límite)">
+      </div>
+      <button class="btn" type="submit">Crear cupón</button>
+    </form>
+  </div>
+{% endblock %}

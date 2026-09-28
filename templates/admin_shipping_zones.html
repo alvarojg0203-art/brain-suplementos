@@ -1,0 +1,71 @@
+{% extends "admin_base.html" %}
+{% block title %}Envíos{% endblock %}
+{% block content %}
+  <h1>Zonas de envío</h1>
+  <p class="subtitle">El precio que cargues acá es el que se le cobra de verdad al cliente en el checkout, cuando elige "Envío a domicilio".</p>
+
+  {% if zones %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Zona</th>
+          <th>Precio</th>
+          <th>Envío gratis desde</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for z in zones %}
+        <tr>
+          <td><strong>{{ z.name }}</strong></td>
+          <td>${{ "%.2f"|format(z.price) }}</td>
+          <td>{{ ("$" ~ "%.2f"|format(z.free_from)) if z.free_from else "—" }}</td>
+          <td>
+            {% if z.active %}<span class="badge badge-on">Activa</span>
+            {% else %}<span class="badge badge-off">Inactiva</span>{% endif %}
+          </td>
+          <td class="actions">
+            <form method="post" action="{{ url_for('admin_toggle_shipping_zone', zone_id=z.id) }}">
+              <button class="btn btn-outline btn-sm" type="submit">{{ "Desactivar" if z.active else "Activar" }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_delete_shipping_zone', zone_id=z.id) }}"
+                  onsubmit="return confirm('¿Eliminar la zona {{ z.name }}?');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Todavía no cargaste ninguna zona de envío. Mientras no haya ninguna activa, el cliente solo va a poder elegir "Retiro en local".
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Nueva zona</h3>
+    <form method="post" action="{{ url_for('admin_new_shipping_zone') }}">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" name="name" required placeholder="Ej: CABA, GBA, Interior del país">
+      </div>
+      <div class="form-group">
+        <label>Precio de envío</label>
+        <input type="number" name="price" min="0" step="0.01" required placeholder="Ej: 3500">
+      </div>
+      <div class="form-group">
+        <label>Envío gratis a partir de (opcional)</label>
+        <input type="number" name="free_from" min="0" step="0.01" placeholder="Ej: 50000 (dejalo vacío para que nunca sea gratis)">
+      </div>
+      <div class="form-group">
+        <label>Orden (opcional)</label>
+        <input type="number" name="sort_order" min="0" placeholder="Las de número más bajo aparecen primero">
+      </div>
+      <button class="btn" type="submit">Crear zona</button>
+    </form>
+  </div>
+{% endblock %}

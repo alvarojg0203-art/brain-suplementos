@@ -1,0 +1,96 @@
+{% extends "admin_base.html" %}
+{% block title %}Destacados{% endblock %}
+{% block content %}
+  <h1>Destacados</h1>
+  <p class="subtitle">Acá podés fijar a mano qué productos aparecen primero en "Novedades" y en "Más vendidos" de la home. Los que no fijes se siguen completando solos como siempre: en Novedades por fecha de carga, en Más vendidos por ventas reales.</p>
+
+  <div class="card">
+    <h2 style="margin-bottom:6px;">Novedades</h2>
+    <p class="subtitle" style="margin-bottom:14px;">Estos productos aparecen primero, en este orden. Los lugares que sobren se completan solos con los productos más nuevos.</p>
+
+    {% for f in novedades %}
+    <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border-color, #eee);">
+      <img src="{{ f.image_url or '' }}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eee;flex-shrink:0;">
+      <div style="flex:1;min-width:160px;">
+        {{ f.name }}
+        {% if not f.active %}<span style="color:#a33d3d;font-size:0.85em;"> (inactivo)</span>{% endif %}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="post" action="{{ url_for('admin_move_featured_product', featured_id=f.id) }}">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.first %}disabled{% endif %}>&uarr;</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_move_featured_product', featured_id=f.id) }}">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.last %}disabled{% endif %}>&darr;</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_delete_featured_product', featured_id=f.id) }}"
+              onsubmit="return confirm('¿Quitar este producto de Novedades?');">
+          <button class="btn btn-danger btn-sm" type="submit">Quitar</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p style="color:var(--color-muted);">Todavía no fijaste ningún producto acá — la sección se arma sola con los más nuevos.</p>
+    {% endfor %}
+
+    <form method="post" action="{{ url_for('admin_add_featured_product') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:16px;">
+      <input type="hidden" name="section" value="novedades">
+      <div class="form-group" style="flex:1;min-width:220px;margin-bottom:0;">
+        <label>Agregar producto</label>
+        <select name="product_id" required>
+          <option value="" disabled selected>Elegí un producto...</option>
+          {% for p in products %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Fijar en Novedades</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-bottom:6px;">Más vendidos</h2>
+    <p class="subtitle" style="margin-bottom:14px;">Estos productos aparecen primero, en este orden. Los lugares que sobren se completan solos según ventas reales (o con los más nuevos si todavía no hay ventas).</p>
+
+    {% for f in vendidos %}
+    <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border-color, #eee);">
+      <img src="{{ f.image_url or '' }}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eee;flex-shrink:0;">
+      <div style="flex:1;min-width:160px;">
+        {{ f.name }}
+        {% if not f.active %}<span style="color:#a33d3d;font-size:0.85em;"> (inactivo)</span>{% endif %}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="post" action="{{ url_for('admin_move_featured_product', featured_id=f.id) }}">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.first %}disabled{% endif %}>&uarr;</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_move_featured_product', featured_id=f.id) }}">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.last %}disabled{% endif %}>&darr;</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_delete_featured_product', featured_id=f.id) }}"
+              onsubmit="return confirm('¿Quitar este producto de Más vendidos?');">
+          <button class="btn btn-danger btn-sm" type="submit">Quitar</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p style="color:var(--color-muted);">Todavía no fijaste ningún producto acá — la sección se arma sola según ventas (o con los más nuevos si todavía no hay ventas).</p>
+    {% endfor %}
+
+    <form method="post" action="{{ url_for('admin_add_featured_product') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:16px;">
+      <input type="hidden" name="section" value="vendidos">
+      <div class="form-group" style="flex:1;min-width:220px;margin-bottom:0;">
+        <label>Agregar producto</label>
+        <select name="product_id" required>
+          <option value="" disabled selected>Elegí un producto...</option>
+          {% for p in products %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Fijar en Más vendidos</button>
+    </form>
+  </div>
+{% endblock %}

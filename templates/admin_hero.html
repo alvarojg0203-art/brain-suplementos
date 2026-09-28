@@ -1,0 +1,129 @@
+{% extends "admin_base.html" %}
+{% block title %}Portada{% endblock %}
+{% block content %}
+  <h1>Carrusel de la portada</h1>
+  <p class="subtitle">Estas imágenes aparecen arriba de todo en la home, donde dice "Entrená con lo mejor". Si no cargás ninguna, se ve el texto de siempre.</p>
+
+  {% for s in slides %}
+  <div class="card">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <div>
+          <img src="{{ s.image_url }}" style="width:140px;height:90px;object-fit:cover;border-radius:8px;background:#eee;">
+          <p style="font-size:0.72rem;color:var(--color-muted);text-align:center;margin-top:4px;">Compu</p>
+        </div>
+        {% if s.mobile_image_url %}
+        <div>
+          <img src="{{ s.mobile_image_url }}" style="width:70px;height:90px;object-fit:cover;border-radius:8px;background:#eee;">
+          <p style="font-size:0.72rem;color:var(--color-muted);text-align:center;margin-top:4px;">Celular</p>
+        </div>
+        {% endif %}
+      </div>
+      <form method="post" action="{{ url_for('admin_edit_hero_slide', slide_id=s.id) }}" enctype="multipart/form-data" style="flex:1;min-width:260px;">
+        <div class="form-group">
+          <label>Título (opcional)</label>
+          <input type="text" name="title" value="{{ s.title or '' }}" placeholder="Ej: Nueva línea de proteínas">
+        </div>
+        <div class="form-group">
+          <label>Texto (opcional)</label>
+          <input type="text" name="subtitle" value="{{ s.subtitle or '' }}" placeholder="Ej: Descubrí los suplementos más pedidos">
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="form-group" style="flex:1;min-width:140px;">
+            <label>Texto del botón (opcional)</label>
+            <input type="text" name="button_text" value="{{ s.button_text or '' }}" placeholder="Ej: Ver más">
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px;">
+            <label>A dónde lleva el botón</label>
+            <select name="button_link">
+              <option value="" {% if not s.button_link %}selected{% endif %}>Sin botón</option>
+              <option value="#catalogo" {% if s.button_link == "#catalogo" %}selected{% endif %}>Todo el catálogo</option>
+              <option value="/?tag=ofertas#catalogo" {% if s.button_link == "/?tag=ofertas#catalogo" %}selected{% endif %}>Solo ofertas</option>
+              {% for cat in categories %}
+              <option value="/?tag={{ cat.slug }}#catalogo" {% if s.button_link == "/?tag=" ~ cat.slug ~ "#catalogo" %}selected{% endif %}>{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reemplazar imagen de compu (opcional)</label>
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        </div>
+        <div class="form-group">
+          <label>{{ "Reemplazar" if s.mobile_image_url else "Agregar" }} imagen para celular (opcional)</label>
+          <input type="file" name="mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif">
+          <p style="font-size:0.78rem;color:var(--color-muted);margin-top:4px;">Si no cargás ninguna, el celular muestra la misma imagen que la compu.</p>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="active" style="width:auto;" {% if s.active %}checked{% endif %}>
+          <label style="margin:0;">Visible en la portada</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="submit">Guardar</button>
+        </div>
+      </form>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <form method="post" action="{{ url_for('admin_move_hero_slide', slide_id=s.id) }}">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.first %}disabled{% endif %}>&uarr; Subir</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_move_hero_slide', slide_id=s.id) }}">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.last %}disabled{% endif %}>&darr; Bajar</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_delete_hero_slide', slide_id=s.id) }}"
+              onsubmit="return confirm('¿Eliminar esta imagen del carrusel?');">
+          <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:var(--color-muted);">Todavía no cargaste ninguna imagen para el carrusel.</div>
+  {% endfor %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Agregar imagen nueva</h3>
+    <form method="post" action="{{ url_for('admin_add_hero_slide') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Imagen (compu)</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif" required>
+      </div>
+      <div class="form-group">
+        <label>Imagen para celular (opcional)</label>
+        <input type="file" name="mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        <p style="font-size:0.78rem;color:var(--color-muted);margin-top:4px;">Si no cargás ninguna, el celular muestra la misma imagen de arriba.</p>
+      </div>
+      <div class="form-group">
+        <label>Título (opcional)</label>
+        <input type="text" name="title" placeholder="Ej: Nueva línea de proteínas">
+      </div>
+      <div class="form-group">
+        <label>Texto (opcional)</label>
+        <input type="text" name="subtitle" placeholder="Ej: Descubrí los suplementos más pedidos">
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:140px;">
+          <label>Texto del botón (opcional)</label>
+          <input type="text" name="button_text" placeholder="Ej: Ver más">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;">
+          <label>A dónde lleva el botón</label>
+          <select name="button_link">
+            <option value="">Sin botón</option>
+            <option value="#catalogo">Todo el catálogo</option>
+            <option value="/?tag=ofertas#catalogo">Solo ofertas</option>
+            {% for cat in categories %}
+            <option value="/?tag={{ cat.slug }}#catalogo">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="active" checked style="width:auto;">
+        <label style="margin:0;">Visible en la portada</label>
+      </div>
+      <button class="btn" type="submit">Agregar imagen</button>
+    </form>
+  </div>
+{% endblock %}

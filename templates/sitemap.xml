@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{% for p in pages %}  <url>
+    <loc>{{ p.loc }}</loc>
+    <priority>{{ p.priority }}</priority>
+  </url>
+{% endfor %}</urlset>

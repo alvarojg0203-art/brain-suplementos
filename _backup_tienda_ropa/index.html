@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vua Showroom | Indumentaria, calzado y accesorios</title>
+<meta name="description" content="Vua Showroom - Indumentaria, calzado y accesorios de mujer. Comprá online, retirá o recibí en tu casa.">
+
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+<!-- Vista previa al compartir el link (WhatsApp, Instagram, Facebook, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vua Showroom | Indumentaria, calzado y accesorios">
+<meta property="og:description" content="Moda que te representa. Indumentaria, calzado y accesorios seleccionados para vos. Comprá online y recibilo donde estés.">
+<meta property="og:image" content="https://placehold.co/1200x630/ecdfd0/634b3d?text=Vua+Showroom">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Vua Showroom">
+<meta name="twitter:description" content="Indumentaria, calzado y accesorios de mujer. Comprá online, retirá o recibí en tu casa.">
+<meta name="twitter:image" content="https://placehold.co/1200x630/ecdfd0/634b3d?text=Vua+Showroom">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Yellowtail&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<script type="application/ld+json" id="ldJsonStore">
+{
+  "@context": "https://schema.org",
+  "@type": "ClothingStore",
+  "name": "Vua Showroom",
+  "description": "Indumentaria, calzado y accesorios de mujer. Comprá online, retirá o recibí en tu casa.",
+  "image": "https://placehold.co/1200x630/ecdfd0/634b3d?text=Vua+Showroom",
+  "telephone": "+__WHATSAPP_NUMBER__",
+  "sameAs": [
+    "__INSTAGRAM_URL__",
+    "https://wa.me/__WHATSAPP_NUMBER__"
+  ]
+}
+</script>
+</head>
+<body>
+
+<div class="announce-bar" id="announceBar">
+  <span>Envíos a todo el país · 3 cuotas sin interés con Mercado Pago</span>
+  <button onclick="dismissAnnounce()" aria-label="Cerrar aviso">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+</div>
+
+<header>
+  <div class="nav">
+    <a href="#inicio" class="logo"><img src="/static/img/logo-vua.png" alt="Vua Showroom" class="logo-img"></a>
+    <nav class="nav-links">
+      <a href="#inicio">Inicio</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#nosotros">Nosotras</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="account-link" id="accountLink" href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="accountLabel">Ingresar</span>
+      </a>
+      <button class="cart-btn" onclick="openCart()" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="nav-links" id="mobileMenu" style="display:none;flex-direction:column;gap:0;padding:0 24px 16px;">
+    <a href="#inicio" style="padding:10px 0;">Inicio</a>
+    <a href="#catalogo" style="padding:10px 0;">Catálogo</a>
+    <a href="#nosotros" style="padding:10px 0;">Nosotras</a>
+    <a href="#contacto" style="padding:10px 0;">Contacto</a>
+  </nav>
+</header>
+
+<section class="hero" id="inicio">
+  <div class="hero-slider" id="heroSlider">
+    <div class="hero-slide default active">
+      <div class="hero-content">
+        <h1>Moda que te representa</h1>
+        <p>Indumentaria, calzado y accesorios seleccionados para vos. Comprá online y recibilo donde estés.</p>
+        <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
+      </div>
+    </div>
+  </div>
+  <button class="hero-arrow hero-arrow-prev" onclick="heroPrev()" style="display:none;" aria-label="Anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  </button>
+  <button class="hero-arrow hero-arrow-next" onclick="heroNext()" style="display:none;" aria-label="Siguiente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+  <div class="hero-dots" id="heroDots" style="display:none;"></div>
+</section>
+
+<section class="categories">
+  <h2>Comprá por categoría</h2>
+  <p class="section-sub">Encontrá justo lo que buscás</p>
+  <div class="cat-grid">
+    <div class="cat-card cat-indumentaria" onclick="filterCategory('indumentaria')">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 6 6 3 8l2 3 1.5-1V21h11V10L19 11l2-3-3-2-3-2-1.5 2h-3L9 4Z"/></svg></div>
+      <h3>Indumentaria</h3>
+      <p>Remeras, vestidos, pantalones y más</p>
+      <span class="cat-link">Ver productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </div>
+    <div class="cat-card cat-calzado" onclick="filterCategory('calzado')">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 18.5v-3.2c0-.7.4-1.3 1-1.6l4.6-2.4c.5-.3.9-.8 1-1.4l.4-2.1c.1-.6.7-1.1 1.3-1.1h.6c.4 0 .8.2 1 .5l2.6 3.1c.3.3.7.5 1.1.5h3.4c1.1 0 2 .9 2 2v3.7"/><path d="M2.5 18.5h18.9c.6 0 1.1-.5 1.1-1.1 0-.5-.3-.9-.8-1l-2.2-.6"/><path d="M8 12.3v2"/><path d="M10.5 11.6l1 2.3"/><path d="M13 10.8l1.3 2.6"/></svg></div>
+      <h3>Calzado</h3>
+      <p>Zapatillas, sandalias y botas</p>
+      <span class="cat-link">Ver productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </div>
+    <div class="cat-card cat-accesorios" onclick="filterCategory('accesorios')">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V7a6 6 0 0 1 12 0v3"/><rect x="3" y="10" width="18" height="11" rx="2"/></svg></div>
+      <h3>Accesorios</h3>
+      <p>Carteras, cinturones y bijou</p>
+      <span class="cat-link">Ver productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </div>
+  </div>
+</section>
+
+<section class="sets" id="conjuntos" style="display:none;">
+  <h2>Armá tu look</h2>
+  <p class="section-sub">Conjuntos pensados para combinar</p>
+  <div class="sets-grid" id="setsGrid"></div>
+</section>
+
+<section class="catalog" id="catalogo">
+  <h2>Nuestro catálogo</h2>
+  <p class="section-sub">Precios en pesos argentinos</p>
+
+  <div class="catalog-tools">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar productos..." oninput="onSearchInput()">
+    </div>
+    <div class="price-filter">
+      <input type="number" id="priceMin" placeholder="Precio min" min="0">
+      <span>–</span>
+      <input type="number" id="priceMax" placeholder="Precio max" min="0">
+      <button class="btn btn-outline btn-sm" onclick="applyPriceFilter()">Aplicar</button>
+    </div>
+    <button class="filter-btn fav-filter-btn" id="favFilterBtn" onclick="toggleFavFilter()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7.2-4.6-10-9.3C.3 8.4 1.8 4.8 5.2 4c2-.5 4 .3 5.3 2 1.3-1.7 3.3-2.5 5.3-2 3.4.8 4.9 4.4 3.2 7.7C19.2 16.4 12 21 12 21Z"/></svg>
+      Favoritos
+    </button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-cat="todos" onclick="filterCategory('todos')">Todos</button>
+    <button class="filter-btn" data-cat="indumentaria" onclick="filterCategory('indumentaria')">Indumentaria</button>
+    <button class="filter-btn" data-cat="calzado" onclick="filterCategory('calzado')">Calzado</button>
+    <button class="filter-btn" data-cat="accesorios" onclick="filterCategory('accesorios')">Accesorios</button>
+  </div>
+  <!-- Se llena con JS desde /api/subcategories según la categoría elegida
+       (Remeras/Vestidos dentro de Indumentaria, Botas dentro de Calzado, etc.) -->
+  <div class="subfilters" id="subfilters" style="display:none;"></div>
+  <div class="offers-banner" id="offersBanner" style="display:none;">
+    Mostrando solo productos en oferta · <a href="#" onclick="clearOffersFilter();return false;">Ver todo el catálogo</a>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+</section>
+
+<section class="about" id="nosotros">
+  <div class="about-content">
+    <h2>Sobre nosotras</h2>
+    <p>Vua Showroom nace con la idea de acercarte moda de calidad, cómoda y a buen precio. Seleccionamos cada prenda, calzado y accesorio pensando en vos. Envíos a todo el país y retiro en local.</p>
+  </div>
+</section>
+
+<section class="trust-strip">
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 9 4.6-.3 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+    <span>Compra 100% segura</span>
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
+    <span>Envíos a todo el país</span>
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2 21 6l-4 4M21 6H8a4 4 0 0 0-4 4v1M7 22 3 18l4-4M3 18h13a4 4 0 0 0 4-4v-1"/></svg>
+    <span>Cambios y devoluciones</span>
+  </div>
+</section>
+
+<section class="instagram-follow">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.72 0 3.06.01 4.12.06 1.06.05 1.79.22 2.43.47.66.26 1.21.6 1.76 1.15.55.55.9 1.1 1.15 1.76.25.64.42 1.37.47 2.43.05 1.06.06 1.4.06 4.13s-.01 3.07-.06 4.13c-.05 1.06-.22 1.79-.47 2.43-.26.66-.6 1.21-1.15 1.76-.55.55-1.1.9-1.76 1.15-.64.25-1.37.42-2.43.47-1.06.05-1.4.06-4.12.06-2.73 0-3.07-.01-4.13-.06-1.06-.05-1.79-.22-2.43-.47-.66-.26-1.21-.6-1.76-1.15-.55-.55-.9-1.1-1.15-1.76-.25-.64-.42-1.37-.47-2.43C2.01 15.07 2 14.73 2 12s.01-3.07.06-4.13c.05-1.06.22-1.79.47-2.43.26-.66.6-1.21 1.15-1.76.55-.55 1.1-.9 1.76-1.15.64-.25 1.37-.42 2.43-.47C8.93 2.01 9.27 2 12 2zm0 1.8c-2.68 0-3 .01-4.05.06-.87.04-1.34.18-1.65.3-.42.16-.71.36-1.02.67-.31.31-.51.6-.67 1.02-.12.31-.26.78-.3 1.65C4.26 8.5 4.25 8.82 4.25 10.5v3c0 1.68.01 2 .06 3.05.04.87.18 1.34.3 1.65.16.42.36.71.67 1.02.31.31.6.51 1.02.67.31.12.78.26 1.65.3 1.05.05 1.37.06 4.05.06s3-.01 4.05-.06c.87-.04 1.34-.18 1.65-.3.42-.16.71-.36 1.02-.67.31-.31.51-.6.67-1.02.12-.31.26-.78.3-1.65.05-1.05.06-1.37.06-4.05s-.01-3-.06-4.05c-.04-.87-.18-1.34-.3-1.65-.16-.42-.36-.71-.67-1.02a2.83 2.83 0 0 0-1.02-.67c-.31-.12-.78-.26-1.65-.3-1.05-.05-1.37-.06-4.05-.06zm0 4.05a4.15 4.15 0 1 1 0 8.3 4.15 4.15 0 0 1 0-8.3zm0 1.8a2.35 2.35 0 1 0 0 4.7 2.35 2.35 0 0 0 0-4.7zm5.28-1.99a.97.97 0 1 1-1.94 0 .97.97 0 0 1 1.94 0z"/></svg>
+  <h2>Seguinos en Instagram</h2>
+  <p>Subimos looks nuevos, promos y el detrás de escena de Vua Showroom todas las semanas.</p>
+  <a href="#" target="_blank" class="btn btn-primary js-instagram-link">Ver nuestro Instagram</a>
+</section>
+
+<footer id="contacto">
+  <h2>¿Tenés dudas? Escribinos</h2>
+  <p>Respondemos por WhatsApp, Instagram y Gmail todos los días</p>
+  <div class="social-links">
+    <a href="#" target="_blank" aria-label="WhatsApp" class="social-icon social-whatsapp js-whatsapp-link">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.29-.15-1.72-.85-1.99-.94-.27-.1-.46-.15-.66.15-.2.29-.76.94-.93 1.13-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.43-.86-.76-1.44-1.71-1.6-2-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51h-.56c-.2 0-.51.07-.78.37-.27.29-1.02 1-1.02 2.43 0 1.43 1.04 2.82 1.19 3.01.15.2 2.05 3.13 4.96 4.39.69.3 1.23.48 1.65.61.69.22 1.32.19 1.82.11.55-.08 1.72-.7 1.96-1.38.24-.68.24-1.26.17-1.38-.07-.12-.27-.2-.56-.34z"/><path d="M12.02 2C6.5 2 2.02 6.48 2.02 12c0 1.85.5 3.58 1.37 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12.02 22C17.55 22 22 17.52 22 12S17.55 2 12.02 2zm0 18.1a8.07 8.07 0 0 1-4.13-1.13l-.3-.18-3 .79.8-2.92-.19-.3A8.09 8.09 0 1 1 20.1 12a8.1 8.1 0 0 1-8.08 8.1z"/></svg>
+    </a>
+    <a href="#" target="_blank" aria-label="Instagram" class="social-icon social-instagram js-instagram-link">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.72 0 3.06.01 4.12.06 1.06.05 1.79.22 2.43.47.66.26 1.21.6 1.76 1.15.55.55.9 1.1 1.15 1.76.25.64.42 1.37.47 2.43.05 1.06.06 1.4.06 4.13s-.01 3.07-.06 4.13c-.05 1.06-.22 1.79-.47 2.43-.26.66-.6 1.21-1.15 1.76-.55.55-1.1.9-1.76 1.15-.64.25-1.37.42-2.43.47-1.06.05-1.4.06-4.12.06-2.73 0-3.07-.01-4.13-.06-1.06-.05-1.79-.22-2.43-.47-.66-.26-1.21-.6-1.76-1.15-.55-.55-.9-1.1-1.15-1.76-.25-.64-.42-1.37-.47-2.43C2.01 15.07 2 14.73 2 12s.01-3.07.06-4.13c.05-1.06.22-1.79.47-2.43.26-.66.6-1.21 1.15-1.76.55-.55 1.1-.9 1.76-1.15.64-.25 1.37-.42 2.43-.47C8.93 2.01 9.27 2 12 2zm0 1.8c-2.68 0-3 .01-4.05.06-.87.04-1.34.18-1.65.3-.42.16-.71.36-1.02.67-.31.31-.51.6-.67 1.02-.12.31-.26.78-.3 1.65C4.26 8.5 4.25 8.82 4.25 10.5v3c0 1.68.01 2 .06 3.05.04.87.18 1.34.3 1.65.16.42.36.71.67 1.02.31.31.6.51 1.02.67.31.12.78.26 1.65.3 1.05.05 1.37.06 4.05.06s3-.01 4.05-.06c.87-.04 1.34-.18 1.65-.3.42-.16.71-.36 1.02-.67.31-.31.51-.6.67-1.02.12-.31.26-.78.3-1.65.05-1.05.06-1.37.06-4.05s-.01-3-.06-4.05c-.04-.87-.18-1.34-.3-1.65-.16-.42-.36-.71-.67-1.02a2.83 2.83 0 0 0-1.02-.67c-.31-.12-.78-.26-1.65-.3-1.05-.05-1.37-.06-4.05-.06zm0 4.05a4.15 4.15 0 1 1 0 8.3 4.15 4.15 0 0 1 0-8.3zm0 1.8a2.35 2.35 0 1 0 0 4.7 2.35 2.35 0 0 0 0-4.7zm5.28-1.99a.97.97 0 1 1-1.94 0 .97.97 0 0 1 1.94 0z"/></svg>
+    </a>
+    <a href="mailto:contacto@vuashowroom.com" target="_blank" aria-label="Gmail" class="social-icon social-gmail">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M3 8.4V18c0 .83.67 1.5 1.5 1.5H6v-9.3L3 8.4z"/><path fill="#34A853" d="M18 9.5v9H19.5c.83 0 1.5-.67 1.5-1.5V8.4l-3 1.1z"/><path fill="#EA4335" d="M3 8.4l9 6.7 9-6.7-1.09-.82L12 12.5 4.09 7.58 3 8.4z"/><path fill="#FBBC04" d="M3 8.4 4.09 7.58 6 8.9V6H4.5C3.67 6 3 6.67 3 7.5v.9z"/><path fill="#C5221F" d="m18 9.5 1.91-1.4L21 6.9V7.5c0-.83-.67-1.5-1.5-1.5H18v3.5z"/><path fill="#4285F4" d="M6 6h12v2.9L12 12.5 6 8.9V6z"/></svg>
+    </a>
+  </div>
+  <div class="footer-links">
+    <a href="/terminos">Términos y condiciones</a>
+    <a href="/cambios-y-devoluciones">Cambios y devoluciones</a>
+    <a href="/privacidad">Privacidad</a>
+  </div>
+  <!-- OJO: "Dirección de ejemplo, Ciudad, Argentina" es un texto de prueba.
+       Reemplazalo por la dirección real del local (o borrá esa parte si la
+       tienda no tiene local físico) antes de publicarla. Ver README, sección 0. -->
+  <p class="footer-note">Vua Showroom © 2026 · Dirección de ejemplo, Ciudad, Argentina</p>
+</footer>
+
+<!-- CART DRAWER -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header">
+    <h3>Tu carrito</h3>
+    <button class="cart-close" onclick="closeCart()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-subtotal"><span>Subtotal</span><span id="cartSubtotal">$0</span></div>
+    <button class="btn btn-primary" id="checkoutBtn" onclick="openCheckout()">Finalizar compra</button>
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL MODAL -->
+<div class="modal-overlay" id="productModal" onclick="if(event.target===this) closeProductDetail()">
+  <div class="modal product-modal">
+    <button class="modal-close" onclick="closeProductDetail()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div id="productDetailBody">
+      <p style="text-align:center;color:var(--color-muted);padding:40px 0;">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- VISOR DE IMAGEN (zoom) -->
+<div class="modal-overlay lightbox-overlay" id="imageLightbox" onclick="if(event.target===this) closeImageLightbox()">
+  <button class="modal-close" onclick="closeImageLightbox()" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+  <div class="lightbox-hint" id="lightboxHint">Tocá la imagen para hacer zoom</div>
+  <div class="lightbox-frame">
+    <img id="lightboxImg" src="" alt="">
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutModal" onclick="if(event.target===this) closeCheckout()">
+  <div class="modal checkout-modal-box">
+    <button class="modal-close" onclick="closeCheckout()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+
+    <div class="checkout-steps">
+      <div class="checkout-step done" id="stepIndicatorCarrito">
+        <span class="step-dot">✓</span><span class="step-label">Carrito</span>
+      </div>
+      <div class="checkout-step active" id="stepIndicatorEntrega">
+        <span class="step-dot">2</span><span class="step-label">Entrega</span>
+      </div>
+      <div class="checkout-step" id="stepIndicatorPago">
+        <span class="step-dot">3</span><span class="step-label">Pago</span>
+      </div>
+    </div>
+
+    <div class="checkout-body">
+      <div class="checkout-main">
+        <form id="checkoutForm">
+          <!-- PASO 1: datos de contacto y entrega -->
+          <div id="stepEntrega">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" required id="custFirstName">
+              </div>
+              <div class="form-group">
+                <label>Apellido</label>
+                <input type="text" required id="custLastName">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="tel" required id="custPhone" placeholder="Ej: 1123456789">
+            </div>
+            <div class="form-group">
+              <label>Forma de entrega</label>
+              <select id="deliveryMethod">
+                <option value="Envío a domicilio">Envío a domicilio</option>
+                <option value="Retiro en local">Retiro en local</option>
+              </select>
+            </div>
+            <div id="addressGroup">
+              <div class="form-row">
+                <div class="form-group" style="flex:2;">
+                  <label>Calle</label>
+                  <input type="text" id="custStreet">
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label>Número</label>
+                  <input type="text" id="custStreetNumber">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Departamento (opcional)</label>
+                  <input type="text" id="custApartment">
+                </div>
+                <div class="form-group">
+                  <label>Barrio (opcional)</label>
+                  <input type="text" id="custNeighborhood">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Ciudad</label>
+                <input type="text" id="custCity">
+              </div>
+              <div class="form-group" id="shippingCarrierGroup">
+                <label>Zona de envío</label>
+                <div class="shipping-options" id="shippingZonesList">
+                  <p style="font-size:0.85rem;color:var(--color-muted);">Cargando zonas de envío...</p>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="goToPagoStep()">Continuar para el pago</button>
+          </div>
+
+          <!-- PASO 2: método de pago -->
+          <div id="stepPago" style="display:none;">
+            <div class="checkout-recap" id="checkoutRecap"></div>
+            <div class="form-group">
+              <label>Método de pago</label>
+              <div class="pay-options" id="payOptions">
+                <p style="font-size:0.82rem;color:var(--color-muted);">Cargando medios de pago...</p>
+              </div>
+              <p class="accepted-cards" id="acceptedCards" style="display:none;"></p>
+              <div class="form-group" id="transferDniGroup" style="display:none;">
+                <label>Documento del titular de la cuenta</label>
+                <input type="text" id="custTransferDni" placeholder="DNI de quien hace la transferencia" inputmode="numeric">
+                <p class="transfer-dni-warning">Si transferís desde una cuenta con otro DNI, puede que no podamos validar el pago.</p>
+              </div>
+              <div id="cardPaymentBrick" style="display:none;margin-top:6px;"></div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="checkoutSubmitBtn">Enviar pedido por WhatsApp</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="checkout-sidebar">
+        <div class="checkout-summary" id="checkoutSummary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<a class="whatsapp-float js-whatsapp-link" href="#" data-wa-text="Hola Vua Showroom, quería consultar" target="_blank" aria-label="Escribinos por WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.29-.15-1.72-.85-1.99-.94-.27-.1-.46-.15-.66.15-.2.29-.76.94-.93 1.13-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.43-.86-.76-1.44-1.71-1.6-2-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51h-.56c-.2 0-.51.07-.78.37-.27.29-1.02 1-1.02 2.43 0 1.43 1.04 2.82 1.19 3.01.15.2 2.05 3.13 4.96 4.39.69.3 1.23.48 1.65.61.69.22 1.32.19 1.82.11.55-.08 1.72-.7 1.96-1.38.24-.68.24-1.26.17-1.38-.07-.12-.27-.2-.56-.34z"/><path d="M12.02 2C6.5 2 2.02 6.48 2.02 12c0 1.85.5 3.58 1.37 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12.02 22C17.55 22 22 17.52 22 12S17.55 2 12.02 2zm0 18.1a8.07 8.07 0 0 1-4.13-1.13l-.3-.18-3 .79.8-2.92-.19-.3A8.09 8.09 0 1 1 20.1 12a8.1 8.1 0 0 1-8.08 8.1z"/></svg>
+</a>
+
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script src="/static/js/caro.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "admin_base.html" %}
+{% block title %}Medios de pago{% endblock %}
+{% block content %}
+  <h1>Medios de pago</h1>
+  <p class="subtitle">Elegí qué opciones aparecen en el checkout de la tienda. Las que dejes destildadas no se muestran.</p>
+
+  {% if not mp_configured %}
+    <div class="flash">Todavía no configuraste Mercado Pago (falta <code>MP_ACCESS_TOKEN</code> en el <code>.env</code>, ver README sección 9). Podés dejar tildadas "Tarjeta de crédito", "Tarjeta de débito" y "Mercado Pago" igual, pero mientras no lo configures, esos pedidos se van a avisar por WhatsApp en vez de ir al pago online.</div>
+  {% elif not mp_card_form_configured %}
+    <div class="flash">Te falta la <code>MP_PUBLIC_KEY</code> en el <code>.env</code> (ver README sección 10.1) para que el formulario de tarjeta aparezca integrado en la misma página. Mientras tanto, "Tarjeta de crédito" y "Tarjeta de débito" van a redirigir al checkout de Mercado Pago (igual que "Mercado Pago"), en vez de mostrar los campos acá mismo.</div>
+  {% endif %}
+
+  <form method="post" class="card">
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+      <input type="checkbox" name="efectivo" {% if settings.efectivo %}checked{% endif %} style="width:auto;">
+      <span><strong>Efectivo</strong><br><span class="subtitle" style="margin:0;">Sirve tanto para pagar al recibir el envío como para pagar al retirar en el local (la persona elige eso aparte, en "forma de entrega"). Se avisa el pedido por WhatsApp, como hasta ahora.</span></span>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+      <input type="checkbox" name="transferencia" {% if settings.transferencia %}checked{% endif %} style="width:auto;">
+      <span><strong>Transferencia bancaria</strong><br><span class="subtitle" style="margin:0;">También se avisa por WhatsApp; vos le pasás el CBU/alias por ese medio.</span></span>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+      <input type="checkbox" name="tarjeta_credito" {% if settings.tarjeta_credito %}checked{% endif %} style="width:auto;">
+      <span><strong>Tarjeta de crédito</strong><br><span class="subtitle" style="margin:0;">Va al checkout seguro de Mercado Pago; a vos y al cliente les llega un mail cuando se acredita.</span></span>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+      <input type="checkbox" name="tarjeta_debito" {% if settings.tarjeta_debito %}checked{% endif %} style="width:auto;">
+      <span><strong>Tarjeta de débito</strong><br><span class="subtitle" style="margin:0;">Igual que crédito: pago seguro por Mercado Pago, con mail de comprobante.</span></span>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;">
+      <input type="checkbox" name="mercado_pago" {% if settings.mercado_pago %}checked{% endif %} style="width:auto;">
+      <span><strong>Mercado Pago (dinero en cuenta)</strong><br><span class="subtitle" style="margin:0;">Para quien prefiera pagar con el saldo de su cuenta de Mercado Pago.</span></span>
+    </label>
+
+    <div class="form-group" style="margin-top:20px;">
+      <label>Tarjetas que aceptás (solo para mostrar, texto libre)</label>
+      <input type="text" name="tarjetas_aceptadas" value="{{ settings.tarjetas_aceptadas }}" placeholder="Ej: Visa, Mastercard, Naranja, Cabal">
+      <p class="subtitle" style="margin-top:6px;">Esto es solo un cartel informativo en la tienda. Qué tarjetas funcionan de verdad lo define Mercado Pago según cómo tenga configurada tu prima su cuenta — no hace falta elegirlas acá para que funcionen, es nada más para que el cliente vea los logos/nombres antes de comprar.</p>
+    </div>
+
+    <button type="submit" class="btn" style="margin-top:10px;">Guardar</button>
+  </form>
+{% endblock %}

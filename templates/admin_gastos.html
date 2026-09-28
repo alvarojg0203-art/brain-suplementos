@@ -1,0 +1,152 @@
+{% extends "admin_base.html" %}
+{% block title %}Gastos{% endblock %}
+{% block content %}
+  <h1>Gastos</h1>
+  <p class="subtitle">
+    Compras a proveedores y gastos de servicios (alquiler, luz, wifi, sueldos). Los gastos chicos del día a día
+    (comida, merienda) se cargan aparte, desde <a href="{{ url_for('admin_caja') }}">Caja</a>.
+  </p>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:0.8rem;color:var(--color-muted);">Gastos de este mes (proveedores + servicios)</div>
+      <div style="font-size:1.6rem;font-weight:700;">${{ "%.2f"|format(total_mes) }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Cargar gasto</h3>
+    <div class="range-tabs" style="margin-bottom:18px;">
+      <button type="button" class="range-tab active" id="tabProveedor" onclick="switchExpenseTab('proveedor')">Compra a proveedor</button>
+      <button type="button" class="range-tab" id="tabServicio" onclick="switchExpenseTab('servicio')">Gasto de servicio</button>
+    </div>
+
+    <form method="post" action="{{ url_for('admin_nuevo_gasto_negocio') }}" id="expenseForm">
+      <input type="hidden" name="expense_type" id="expenseType" value="proveedor">
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:200px;" id="providerNameGroup">
+          <label>Proveedor</label>
+          <input type="text" name="provider_name" placeholder="Ej: Bunker">
+        </div>
+        <div class="form-group" style="flex:1;min-width:200px;display:none;" id="serviceCategoryGroup">
+          <label>Tipo de servicio</label>
+          <select name="service_category">
+            {% for cat in service_categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="width:170px;">
+          <label>Fecha</label>
+          <input type="date" name="expense_date" value="{{ today }}">
+        </div>
+        <div class="form-group" style="width:170px;">
+          <label>Monto total</label>
+          <input type="number" name="amount" min="0" step="0.01" required placeholder="Ej: 600000">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" name="description" placeholder="Ej: pedido de whey y creatina">
+      </div>
+
+      <div id="providerItemsBlock">
+        <p style="font-size:0.82rem;font-weight:600;margin-bottom:6px;">Detalle de productos (opcional)</p>
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:-4px;margin-bottom:10px;">
+          Si no tenés tiempo de desglosar, dejalo vacío — con el monto total de arriba alcanza para que Ganancias
+          lo calcule bien. Si cargás una línea con un producto de tu catálogo, de paso le actualiza el costo.
+        </p>
+        <div id="itemRows"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addExpenseItemRow()">+ Agregar línea</button>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="btn" type="submit">Guardar gasto</button>
+      </div>
+    </form>
+  </div>
+
+  {% if expenses %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Proveedor / servicio</th>
+          <th>Descripción</th>
+          <th>Ítems</th>
+          <th>Monto</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td style="white-space:nowrap;">{{ e.expense_date.strftime("%d/%m/%Y") if e.expense_date else "" }}</td>
+          <td>{% if e.expense_type == "proveedor" %}<span class="badge badge-off">Proveedor</span>{% else %}<span class="badge badge-on">Servicio</span>{% endif %}</td>
+          <td>{{ e.provider_name or e.service_category or "—" }}</td>
+          <td>{{ e.description or "—" }}</td>
+          <td>{% if e.item_count %}<a href="{{ url_for('admin_gasto_detalle', expense_id=e.id) }}">{{ e.item_count }} producto(s)</a>{% else %}—{% endif %}</td>
+          <td><strong>${{ "%.2f"|format(e.amount) }}</strong></td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_gasto_negocio', expense_id=e.id) }}"
+                  onsubmit="return confirm('¿Eliminar este gasto?');">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">Todavía no cargaste ningún gasto de proveedor o servicio.</div>
+  {% endif %}
+
+  <datalist id="productsList">
+    {% for p in all_products %}
+    <option data-id="{{ p.id }}" value="{{ p.name }}"></option>
+    {% endfor %}
+  </datalist>
+
+  <script>
+    const ALL_PRODUCTS = {{ all_products|tojson }};
+
+    function switchExpenseTab(type){
+      document.getElementById("expenseType").value = type;
+      document.getElementById("tabProveedor").classList.toggle("active", type === "proveedor");
+      document.getElementById("tabServicio").classList.toggle("active", type === "servicio");
+      document.getElementById("providerNameGroup").style.display = type === "proveedor" ? "" : "none";
+      document.getElementById("serviceCategoryGroup").style.display = type === "servicio" ? "" : "none";
+      document.getElementById("providerItemsBlock").style.display = type === "proveedor" ? "" : "none";
+    }
+
+    function addExpenseItemRow(){
+      const wrap = document.getElementById("itemRows");
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;";
+      row.innerHTML = `
+        <input type="text" name="item_product_name" list="productsList" placeholder="Nombre del producto" style="flex:2;min-width:180px;padding:8px 10px;" oninput="matchProductName(this)">
+        <input type="hidden" name="item_product_id">
+        <input type="number" name="item_qty" min="1" placeholder="Cant." style="width:80px;padding:8px 10px;">
+        <input type="number" name="item_unit_cost" min="0" step="0.01" placeholder="Costo unit." style="width:120px;padding:8px 10px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="this.parentElement.remove()">✕</button>
+      `;
+      wrap.appendChild(row);
+    }
+
+    function matchProductName(input){
+      const hidden = input.closest("div").querySelector("input[name=item_product_id]");
+      const match = ALL_PRODUCTS.find(p => p.name === input.value);
+      hidden.value = match ? match.id : "";
+    }
+
+    // Arrancamos con 3 líneas vacías listas para completar.
+    addExpenseItemRow();
+    addExpenseItemRow();
+    addExpenseItemRow();
+  </script>
+{% endblock %}

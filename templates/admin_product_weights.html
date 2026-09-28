@@ -1,0 +1,55 @@
+{% extends "admin_base.html" %}
+{% block title %}Pesos · {{ product.name }}{% endblock %}
+{% block content %}
+  <h1>Pesos de «{{ product.name }}»</h1>
+  <p class="subtitle">
+    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}">&larr; Volver al producto</a>
+    · <a href="{{ url_for('admin_stock') }}">Ir a Stock</a>
+    · Si este producto no tiene ningún peso cargado, se sigue vendiendo con el stock de siempre.
+  </p>
+  <p style="font-size:0.82rem;color:#8a7a6c;max-width:640px;margin-top:-6px;margin-bottom:16px;">
+    Acá cargás los nombres de los pesos. La cantidad de stock de cada uno se carga siempre desde <strong>Stock</strong>.
+  </p>
+
+  {% if flavor_count %}
+  <div class="flash">
+    Este producto tiene sabores cargados: para que cada sabor tenga sus propios pesos con su propio stock (ej: 2 de Rosa viejo en L, 1 de Beige en L), cargalos desde <a href="{{ url_for('admin_product_flavors', product_id=product.id) }}">Sabores</a>, no acá. Los pesos de esta página son "sueltos", sin distinguir sabor.
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Peso</th><th>Stock</th><th></th></tr></thead>
+      <tbody>
+        {% for s in sizes %}
+        <tr>
+          <td><strong>{{ s.weight_label }}</strong></td>
+          <td>{{ s.stock }} <a href="{{ url_for('admin_stock') }}" style="font-size:0.78rem;">(cambiar en Stock)</a></td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_weight', weight_id=s.id) }}"
+                  onsubmit="return confirm('¿Eliminar el peso {{ s.weight_label }}?');">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:var(--color-muted);padding:20px;">Este producto todavía no tiene pesos cargados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Agregar peso nuevo</h3>
+    <form method="post" action="{{ url_for('admin_add_weight', product_id=product.id) }}">
+      <div class="form-group">
+        <label>Nombre del peso</label>
+        <input type="text" name="weight_label" required placeholder="Ej: 950g">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Podés cargar uno solo (ej: <strong>950g</strong>) o varios juntos separados por coma (ej: <strong>450g, 950g, 2kg</strong>) y se crean todos por separado, cada uno con el stock de abajo.</p>
+      </div>
+      <p style="font-size:0.78rem;color:#8a7a6c;margin-top:-6px;margin-bottom:14px;">El peso se crea con stock 0. Cargá la cantidad después desde <a href="{{ url_for('admin_stock') }}">Stock</a>.</p>
+      <button class="btn" type="submit">Agregar peso(s)</button>
+    </form>
+  </div>
+{% endblock %}

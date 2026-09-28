@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Panel admin{% endblock %} · BrainSuplementos</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Paleta BrainSuplementos: negro + coral (antes azul marino) */
+    --color-bg:#f2f2f2; --color-card:#ffffff; --color-primary-dark:#111111;
+    --color-dark:#0a0a0a; --color-muted:#5f6b80; --color-border:#e2e2e2;
+    --color-accent:#f35252;
+    --radius:12px; --shadow:0 4px 14px rgba(0,0,0,0.10);
+    --sidebar-w:230px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;
+    background:var(--color-bg); color:var(--color-dark); margin:0;
+  }
+  .brand, h1, h2, h3{ font-family:'Poppins','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif; }
+  a{color:inherit;text-decoration:none;}
+
+  /* SIDEBAR fija a la izquierda (escritorio) */
+  .admin-sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+    background:var(--color-primary-dark);color:#fff;
+    display:flex;flex-direction:column;
+    overflow-y:auto;z-index:40;
+  }
+  .admin-sidebar .brand{
+    display:flex;align-items:center;gap:8px;padding:20px 18px;
+    font-weight:700;letter-spacing:1px;color:#fff;
+    border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;
+  }
+  .brand-logo{height:30px;width:auto;display:block;border-radius:6px;}
+  .admin-nav{display:flex;flex-direction:column;gap:2px;font-size:0.88rem;font-weight:600;padding:12px 10px;}
+  .admin-nav a{padding:10px 12px;border-radius:8px;color:rgba(255,255,255,0.78);transition:background .15s,color .15s;}
+  .admin-nav a:hover{background:rgba(255,255,255,0.08);color:#fff;}
+  .admin-nav a.active{background:var(--color-accent);color:#fff;}
+
+  .admin-menu-toggle{display:none;background:none;border:none;color:#fff;cursor:pointer;padding:6px;flex-shrink:0;}
+  .admin-menu-toggle svg{width:26px;height:26px;display:block;}
+
+  /* Barra superior, solo visible en celular/tablet para el botón de menú */
+  .admin-topbar{display:none;}
+
+  .admin-main{margin-left:var(--sidebar-w);min-height:100vh;}
+  .admin-container{max-width:1000px;margin:32px auto;padding:0 24px;}
+
+  .card{background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:24px;}
+  .btn{
+    display:inline-block;padding:10px 20px;border-radius:24px;font-weight:600;font-size:0.85rem;
+    border:none;cursor:pointer;background:var(--color-primary-dark);color:#fff;
+  }
+  .btn:hover{background:var(--color-accent);}
+  .btn-outline{background:transparent;border:1.5px solid var(--color-border);color:var(--color-dark);}
+  .btn-danger{background:#b34747;}
+  .btn-sm{padding:6px 14px;font-size:0.78rem;}
+  table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--color-border);}
+  th{color:var(--color-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;}
+  img.thumb{width:44px;height:54px;object-fit:cover;border-radius:6px;background:#eee;}
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-weight:600;font-size:0.85rem;margin-bottom:6px;}
+  .form-group input,.form-group select,.form-group textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--color-border);border-radius:8px;
+    font-size:0.9rem;font-family:inherit;
+  }
+  .flash{background:#fdf0d5;border:1px solid #eac97e;color:#7a5c14;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:0.88rem;}
+  .badge{padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;}
+  .badge-on{background:#e3f2e5;color:#357a41;}
+  .badge-off{background:#f3e3e3;color:#a33d3d;}
+  .mobile-scroll-hint{display:none;font-size:0.78rem;color:var(--color-muted);margin-bottom:8px;}
+  .actions{display:flex;gap:8px;}
+  h1{font-size:1.4rem;margin-bottom:4px;}
+  .subtitle{color:var(--color-muted);font-size:0.9rem;margin-bottom:20px;}
+  .range-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .range-tab{
+    padding:8px 16px;border-radius:20px;border:1.5px solid var(--color-border);
+    font-size:0.82rem;font-weight:600;color:var(--color-dark);background:#fff;
+  }
+  .range-tab:hover{border-color:var(--color-primary-dark);}
+  .range-tab.active{background:var(--color-primary-dark);border-color:var(--color-primary-dark);color:#fff;}
+  .range-tab-clear{color:var(--color-muted);border-style:dashed;}
+  .range-tab-clear:hover{color:#b34747;border-color:#b34747;}
+  .date-range-form{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+  .date-range-form .form-group{margin-bottom:0;}
+  .date-range-form input[type="date"]{width:auto;}
+
+  /* Stock: sabores/pesos de un mismo producto en línea, en vez de una
+     fila (y una foto repetida) por cada uno. */
+  .stock-variant-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .stock-variant-chip{
+    display:flex;align-items:center;gap:6px;background:var(--color-bg);
+    border:1px solid var(--color-border);border-radius:20px;padding:5px 10px 5px 12px;
+  }
+  .stock-variant-label{display:flex;align-items:center;gap:5px;font-size:0.8rem;white-space:nowrap;}
+  .stock-variant-chip input[type="number"]{width:58px;padding:5px 6px;font-size:0.82rem;}
+
+  /* Cuando un sabor tiene pesos propios (matriz sabor x peso), se
+     agrupan visualmente bajo el nombre del sabor en vez de mezclarse
+     con los pesos sueltos del producto. */
+  .stock-color-group{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    background:#f6f2ef;border:1px solid var(--color-border);border-radius:20px;
+    padding:6px 12px 6px 12px;
+  }
+  .stock-color-group > .stock-variant-label{font-weight:600;}
+  .stock-color-group .stock-variant-chip{background:#fff;}
+  .stock-add-size-form{display:flex;align-items:center;gap:4px;}
+  .stock-add-size-form input[type="text"]{width:56px;padding:5px 6px;font-size:0.78rem;}
+  .stock-add-size-form input[type="number"]{width:52px;padding:5px 6px;font-size:0.78rem;}
+
+  /* Caja: pantalla de "nueva venta" (buscador de productos a la
+     izquierda, carrito de la venta a la derecha) y el ticket imprimible. */
+  .pos-layout{display:flex;gap:20px;flex-wrap:wrap;}
+  .pos-search-col{flex:1 1 320px;min-width:280px;}
+  .pos-cart-col{flex:1 1 320px;min-width:280px;}
+  .pos-search-results{max-height:420px;overflow-y:auto;border:1px solid var(--color-border);border-radius:10px;}
+  .pos-search-item{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--color-border);
+    cursor:pointer;transition:background .15s;
+  }
+  .pos-search-item:last-child{border-bottom:none;}
+  .pos-search-item:hover{background:var(--color-bg);}
+  .pos-search-item img{width:38px;height:46px;object-fit:cover;border-radius:6px;background:#eee;flex-shrink:0;}
+  .pos-search-item .psi-info{flex:1;min-width:0;}
+  .pos-search-item .psi-name{font-size:0.88rem;font-weight:600;}
+  .pos-search-item .psi-meta{font-size:0.76rem;color:var(--color-muted);}
+  .pos-variant-picker{padding:10px 12px;background:var(--color-bg);border-bottom:1px solid var(--color-border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .pos-variant-picker select{width:auto;padding:6px 10px;font-size:0.82rem;}
+  .pos-cart-item{
+    display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border);
+  }
+  .pos-cart-item .pci-info{flex:1;min-width:0;font-size:0.86rem;}
+  .pos-cart-item .pci-variant{font-size:0.76rem;color:var(--color-muted);}
+  .pos-cart-item .pci-qty{display:flex;align-items:center;gap:6px;}
+  .pos-cart-item .pci-qty button{width:24px;height:24px;border:1px solid var(--color-border);border-radius:6px;background:#fff;font-weight:700;cursor:pointer;}
+  .pos-cart-item .pci-price{font-weight:700;font-size:0.88rem;white-space:nowrap;}
+  .pos-cart-item .pci-remove{color:#b34747;font-size:0.78rem;text-decoration:underline;cursor:pointer;background:none;border:none;}
+  .pos-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:14px;margin-top:6px;border-top:1.5px solid var(--color-border);font-size:1.15rem;font-weight:700;}
+  .pos-empty{color:var(--color-muted);font-size:0.88rem;text-align:center;padding:24px 0;}
+  .pos-discount-line{display:flex;justify-content:space-between;font-size:0.82rem;color:#8a6a10;padding-top:6px;}
+
+  /* Caja: card de "Abrir caja" con estilo más destacado, y el panel de
+     "Vender" (buscador + carrito + cliente) integrado en la misma
+     pantalla, con look de sistema POS profesional. */
+  .caja-open-hero{
+    max-width:440px;margin:0 auto;text-align:center;border:none;
+    background:linear-gradient(160deg,var(--color-primary-dark) 0%,#000000 100%);color:#fff;
+  }
+  .caja-open-hero .caja-open-icon{font-size:2.2rem;display:block;margin-bottom:8px;}
+  .caja-open-hero h3{color:#fff;margin-bottom:6px;}
+  .caja-open-hero p{color:#e6c7c7;font-size:0.86rem;margin-bottom:18px;}
+  .caja-open-hero .form-group label{color:#e6eefb;}
+  .caja-open-hero input{border:1.5px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.10);color:#fff;}
+  .caja-open-hero input::placeholder{color:#dcb9b9;}
+  .caja-open-hero .btn{background:#fff;color:var(--color-primary-dark);width:100%;padding:12px 20px;font-size:0.95rem;}
+  .caja-open-hero .btn:hover{background:var(--color-accent);color:#fff;}
+
+  .pos-panel{border:1.5px solid var(--color-primary-dark);}
+  .pos-panel-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .pos-panel-header .pos-panel-icon{
+    width:34px;height:34px;border-radius:8px;background:var(--color-primary-dark);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;
+  }
+  .pos-panel-header h3{margin:0;}
+  .pos-panel-header span{display:block;font-size:0.78rem;color:var(--color-muted);}
+
+  .customer-toggle{display:flex;gap:8px;margin-bottom:10px;}
+  .customer-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--color-bg);border:1.5px solid var(--color-border);border-radius:10px;
+    padding:10px 12px;font-size:0.86rem;margin-top:8px;
+  }
+  .customer-chip button{background:none;border:none;color:#b34747;font-size:0.78rem;cursor:pointer;text-decoration:underline;}
+  .pos-discount-badge{background:#fff4d6;color:#8a6a10;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;margin-left:6px;}
+  .customer-search-results{border:1px solid var(--color-border);border-radius:8px;max-height:160px;overflow-y:auto;margin-top:6px;}
+  .customer-search-item{padding:8px 10px;font-size:0.84rem;cursor:pointer;border-bottom:1px solid var(--color-border);}
+  .customer-search-item:last-child{border-bottom:none;}
+  .customer-search-item:hover{background:var(--color-bg);}
+  .pos-cuenta-hint{font-size:0.76rem;color:#b34747;margin-top:6px;display:none;}
+
+  /* Ticket imprimible: angosto como un comprobante de impresora térmica. */
+  .ticket-box{max-width:320px;margin:0 auto 28px;font-family:'Courier New',monospace;font-size:0.82rem;border:1px solid var(--color-border);}
+  .ticket-box .ticket-logo{display:block;width:56px;height:56px;margin:0 auto 8px;border-radius:12px;}
+  .ticket-box h2{font-size:1.05rem;text-align:center;margin-bottom:2px;letter-spacing:0.5px;}
+  .ticket-box .ticket-sub{text-align:center;color:var(--color-muted);font-size:0.75rem;margin-bottom:12px;}
+  .ticket-box hr{border:none;border-top:1px dashed var(--color-border);margin:10px 0;}
+  .ticket-box .ticket-row{display:flex;justify-content:space-between;gap:8px;}
+  .ticket-box .ticket-total{font-weight:700;font-size:0.95rem;}
+  .ticket-items{width:100%;border-collapse:collapse;font-size:0.8rem;}
+  .ticket-items th{text-align:left;font-size:0.68rem;text-transform:uppercase;color:var(--color-muted);padding-bottom:4px;}
+  .ticket-items th:last-child, .ticket-items td:last-child{text-align:right;white-space:nowrap;}
+  .ticket-items td{padding:4px 0;vertical-align:top;}
+  .ticket-variant{color:var(--color-muted);font-size:0.74rem;}
+  .ticket-signature p{margin:14px 0 0;font-size:0.8rem;}
+  @media print{
+    .no-print{display:none !important;}
+    .admin-sidebar, .admin-topbar, .admin-container > .flash{display:none !important;}
+    .admin-main{margin-left:0;}
+    .ticket-box{max-width:none;border:none;margin-bottom:0;}
+    .ticket-copy{page-break-after:always;}
+    .ticket-copy:last-child{page-break-after:auto;}
+  }
+
+  /* Celular/tablet: la sidebar deja de estar fija a la izquierda y pasa
+     a ser un menú desplegable detrás de un botón de 3 líneas arriba,
+     igual que en la tienda. Las tablas usan scroll horizontal en vez de
+     desbordarse, con un poco menos de padding para aprovechar pantalla. */
+  @media(max-width:900px){
+    .admin-sidebar{
+      position:fixed;top:0;left:0;right:0;bottom:auto;width:100%;height:auto;
+      flex-direction:column;
+    }
+    .admin-sidebar .brand{display:none;}
+    .admin-nav{
+      display:none;flex-direction:column;gap:2px;font-size:0.92rem;
+      padding:10px;max-height:calc(100vh - 56px);overflow-y:auto;
+    }
+    .admin-nav.open{display:flex;}
+    .admin-topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 16px;background:var(--color-primary-dark);color:#fff;position:relative;z-index:41;
+    }
+    .admin-topbar .brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:1px;color:#fff;}
+    .admin-main{margin-left:0;padding-top:56px;}
+    .admin-container{margin:20px auto;padding:0 16px;}
+    .card{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .mobile-scroll-hint{display:block;}
+    h1{font-size:1.2rem;}
+    table{font-size:0.82rem;}
+    th,td{padding:8px 6px;}
+    .actions{flex-wrap:wrap;}
+    .date-range-form{gap:10px;}
+    .date-range-form .form-group{flex:1 1 130px;}
+  }
+  @media(max-width:420px){
+    .range-tabs{gap:6px;}
+    .range-tab{padding:6px 12px;font-size:0.78rem;}
+    .btn-sm{padding:5px 10px;font-size:0.72rem;}
+    img.thumb{width:36px;height:44px;}
+  }
+</style>
+</head>
+<body>
+<div class="admin-sidebar">
+  <span class="brand"><img src="/static/img/logo-brain.png" alt="BrainSuplementos" class="brand-logo"> Panel Admin</span>
+  <nav class="admin-nav" id="adminNav">
+    <a href="{{ url_for('admin_dashboard') }}">Productos</a>
+    <a href="{{ url_for('admin_stock') }}">Stock</a>
+    <a href="{{ url_for('admin_caja') }}">Caja</a>
+    <a href="{{ url_for('admin_gastos') }}">Gastos</a>
+    <a href="{{ url_for('admin_cuenta_corriente') }}">Cuenta corriente</a>
+    <a href="{{ url_for('admin_reportes') }}">Ganancias</a>
+    <a href="{{ url_for('admin_sets') }}">Combos</a>
+    <a href="{{ url_for('admin_categories') }}">Categorías</a>
+    <a href="{{ url_for('admin_subcategories') }}">Subcategorías</a>
+    <a href="{{ url_for('admin_hero') }}">Portada</a>
+    <a href="{{ url_for('admin_banners') }}">Banners</a>
+    <a href="{{ url_for('admin_brands') }}">Marcas</a>
+    <a href="{{ url_for('admin_instagram_posts') }}">Instagram</a>
+    <a href="{{ url_for('admin_featured_products') }}">Destacados</a>
+    <a href="{{ url_for('admin_orders') }}">Pedidos</a>
+    <a href="{{ url_for('admin_customers') }}">Clientes</a>
+    <a href="{{ url_for('admin_reviews') }}">Reseñas</a>
+    <a href="{{ url_for('admin_coupons') }}">Cupones</a>
+    <a href="{{ url_for('admin_welcome_signups') }}">Bienvenida</a>
+    <a href="{{ url_for('admin_shipping_zones') }}">Envíos</a>
+    <a href="{{ url_for('admin_stats') }}">Estadísticas</a>
+    <a href="{{ url_for('admin_payment_settings') }}">Medios de pago</a>
+    <a href="{{ url_for('admin_settings') }}">Configuración</a>
+    <a href="{{ url_for('admin_logout') }}">Salir</a>
+  </nav>
+  <div class="admin-topbar">
+    <span class="brand"><img src="/static/img/logo-brain.png" alt="BrainSuplementos" class="brand-logo"> · admin</span>
+    <button type="button" class="admin-menu-toggle" aria-label="Menú" onclick="document.getElementById('adminNav').classList.toggle('open')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+  </div>
+</div>
+<div class="admin-main">
+  <div class="admin-container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+</body>
+</html>

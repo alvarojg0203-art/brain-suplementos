@@ -1,0 +1,84 @@
+{% extends "admin_base.html" %}
+{% block title %}Banners{% endblock %}
+{% block content %}
+  <h1>Banners motivacionales</h1>
+  <p class="subtitle">Imágenes con un mensaje corto (ej: "Ganar masa muscular") que al hacer click llevan directo a los productos de esa categoría. Aparecen en la home, debajo del catálogo por categoría.</p>
+
+  {% for b in banners %}
+  <div class="card">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <img src="{{ b.image_url }}" style="width:140px;height:90px;object-fit:cover;border-radius:8px;background:#eee;flex-shrink:0;">
+      <form method="post" action="{{ url_for('admin_edit_banner', banner_id=b.id) }}" enctype="multipart/form-data" style="flex:1;min-width:260px;">
+        <div class="form-group">
+          <label>Título / mensaje</label>
+          <input type="text" name="title" value="{{ b.title }}" placeholder="Ej: Ganar masa muscular">
+        </div>
+        <div class="form-group">
+          <label>A dónde lleva al hacer click</label>
+          <select name="button_link">
+            <option value="" {% if not b.button_link %}selected{% endif %}>Todo el catálogo</option>
+            {% for cat in categories %}
+            <option value="/?tag={{ cat.slug }}#catalogo" {% if b.button_link == "/?tag=" ~ cat.slug ~ "#catalogo" %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reemplazar imagen (opcional)</label>
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="active" style="width:auto;" {% if b.active %}checked{% endif %}>
+          <label style="margin:0;">Visible en la tienda</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="submit">Guardar</button>
+        </div>
+      </form>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <form method="post" action="{{ url_for('admin_move_banner', banner_id=b.id) }}">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.first %}disabled{% endif %}>&uarr; Subir</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_move_banner', banner_id=b.id) }}">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-outline btn-sm" type="submit" {% if loop.last %}disabled{% endif %}>&darr; Bajar</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_delete_banner', banner_id=b.id) }}"
+              onsubmit="return confirm('¿Eliminar este banner?');">
+          <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:var(--color-muted);">Todavía no cargaste ningún banner.</div>
+  {% endfor %}
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">+ Agregar banner nuevo</h3>
+    <form method="post" action="{{ url_for('admin_add_banner') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Imagen</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif" required>
+      </div>
+      <div class="form-group">
+        <label>Título / mensaje</label>
+        <input type="text" name="title" placeholder="Ej: Ganar masa muscular">
+      </div>
+      <div class="form-group">
+        <label>A dónde lleva al hacer click</label>
+        <select name="button_link">
+          <option value="">Todo el catálogo</option>
+          {% for cat in categories %}
+          <option value="/?tag={{ cat.slug }}#catalogo">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="active" checked style="width:auto;">
+        <label style="margin:0;">Visible en la tienda</label>
+      </div>
+      <button class="btn" type="submit">Agregar banner</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+{% block title %}Configuración{% endblock %}
+{% block content %}
+  <h1>Configuración</h1>
+  <p class="subtitle">Datos de tu cuenta de administrador</p>
+
+  <div class="card" style="max-width:520px;">
+    <h3 style="margin-bottom:14px;">Tus datos</h3>
+    <form method="post" action="{{ url_for('admin_update_profile') }}">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" name="name" required value="{{ admin.name }}">
+      </div>
+      <div class="form-group">
+        <label>Mail</label>
+        <input type="email" name="email" required value="{{ admin.email }}">
+      </div>
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" name="username" required value="{{ admin.username }}">
+      </div>
+      <button class="btn" type="submit">Guardar datos</button>
+    </form>
+  </div>
+
+  <div class="card" style="max-width:520px;">
+    <h3 style="margin-bottom:14px;">Cambiar contraseña</h3>
+    <form method="post" action="{{ url_for('admin_update_password') }}">
+      <div class="form-group">
+        <label>Contraseña actual</label>
+        <input type="password" name="current_password" required>
+      </div>
+      <div class="form-group">
+        <label>Contraseña nueva</label>
+        <input type="password" name="new_password" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Repetir contraseña nueva</label>
+        <input type="password" name="new_password2" required minlength="6">
+      </div>
+      <button class="btn" type="submit">Cambiar contraseña</button>
+    </form>
+  </div>
+
+  <div class="card" style="max-width:520px;">
+    <h3 style="margin-bottom:14px;">Pregunta de seguridad</h3>
+    <p class="subtitle">Se usa para recuperar tu contraseña si te la olvidás (link "¿Olvidaste tu contraseña?" en el login).</p>
+    <form method="post" action="{{ url_for('admin_update_security') }}">
+      <div class="form-group">
+        <label>Contraseña actual</label>
+        <input type="password" name="current_password" required>
+      </div>
+      <div class="form-group">
+        <label>Pregunta de seguridad</label>
+        <input type="text" name="security_question" required value="{{ admin.security_question }}">
+      </div>
+      <div class="form-group">
+        <label>Respuesta</label>
+        <input type="text" name="security_answer" required placeholder="Escribí la respuesta nueva">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">Por seguridad no mostramos la respuesta guardada — si la cambiás, escribí la respuesta completa de nuevo.</p>
+      </div>
+      <button class="btn" type="submit">Guardar pregunta de seguridad</button>
+    </form>
+  </div>
+{% endblock %}

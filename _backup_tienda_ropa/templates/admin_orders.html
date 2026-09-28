@@ -1,0 +1,93 @@
+{% extends "admin_base.html" %}
+{% block title %}Pedidos{% endblock %}
+{% block content %}
+  <h1>Pedidos</h1>
+  <p class="subtitle">
+    {% if filtered %}{{ orders|length }} pedido(s) recibido(s){% else %}Elegí un período para ver los pedidos{% endif %}
+  </p>
+
+  <div class="range-tabs">
+    <a class="range-tab {% if rango == 'hoy' %}active{% endif %}" href="{{ url_for('admin_orders', rango='hoy') }}">Hoy</a>
+    <a class="range-tab {% if rango == 'semana' %}active{% endif %}" href="{{ url_for('admin_orders', rango='semana') }}">Esta semana</a>
+    <a class="range-tab {% if rango == 'mes' %}active{% endif %}" href="{{ url_for('admin_orders', rango='mes') }}">Este mes</a>
+    <a class="range-tab {% if rango == 'todos' %}active{% endif %}" href="{{ url_for('admin_orders', rango='todos') }}">Todos</a>
+    {% if filtered %}<a class="range-tab range-tab-clear" href="{{ url_for('admin_orders') }}">✕ Limpiar filtros</a>{% endif %}
+    {% if filtered and orders %}
+    <a class="range-tab" style="margin-left:auto;"
+       href="{{ url_for('admin_export_orders', rango=rango, desde=desde, hasta=hasta) }}">⬇ Exportar a PDF</a>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('admin_orders') }}" class="date-range-form">
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" name="desde" value="{{ desde or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta or '' }}">
+    </div>
+    <button type="submit" class="btn btn-outline btn-sm">Buscar por fecha</button>
+  </form>
+
+  {% if not filtered %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">
+    Elegí "Hoy", "Esta semana", "Este mes", "Todos", o un rango de fechas puntual arriba para ver los pedidos.
+  </div>
+  {% elif orders %}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Producto(s)</th>
+          <th>Total</th>
+          <th>Entrega</th>
+          <th>Pago</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td>#{{ o.id }}</td>
+          <td style="white-space:nowrap;">{{ o.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>
+            {{ o.customer_name }}<br>
+            <span style="color:#8a7a6c;font-size:0.8rem;">{{ o.customer_phone }}</span>
+          </td>
+          <td>
+            {% for it in o['items'] %}
+            <div style="white-space:nowrap;">
+              {{ it.product_name }}{% if it.color_name %} · {{ it.color_name }}{% endif %}{% if it.size_name %} · Talle {{ it.size_name }}{% endif %} × {{ it.qty }}
+            </div>
+            {% endfor %}
+          </td>
+          <td style="white-space:nowrap;"><strong>${{ "%.2f"|format(o.total) }}</strong></td>
+          <td>
+            {{ o.delivery_method }}
+            {% if o.delivery_address %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ o.delivery_address }}</span>{% endif %}
+            {% if o.shipping_zone %}<br><span style="color:#8a7a6c;font-size:0.8rem;">{{ o.shipping_zone }} — {{ "Gratis" if not o.shipping_cost else "$" ~ "%.2f"|format(o.shipping_cost) }}</span>{% endif %}
+          </td>
+          <td>{{ o.payment_method }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_update_order_status', order_id=o.id) }}">
+              <select name="status" onchange="this.form.submit()" style="padding:6px 10px;border-radius:20px;border:1.5px solid #e4d6c4;font-size:0.8rem;font-weight:600;">
+                {% for s in order_statuses %}
+                <option value="{{ s }}" {% if o.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+              <noscript><button class="btn btn-outline btn-sm" type="submit">Guardar</button></noscript>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;color:#8a7a6c;">No hay pedidos en este rango.</div>
+  {% endif %}
+{% endblock %}

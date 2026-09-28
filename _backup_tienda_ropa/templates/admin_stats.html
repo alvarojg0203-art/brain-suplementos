@@ -1,0 +1,64 @@
+{% extends "admin_base.html" %}
+{% block title %}Estadísticas{% endblock %}
+{% block content %}
+  <h1>Estadísticas de ventas</h1>
+  <p class="subtitle">Resumen de pedidos pagados, enviados y entregados</p>
+
+  <div class="range-tabs">
+    <a class="range-tab" style="margin-left:auto;" href="{{ url_for('admin_export_stats') }}">⬇ Exportar a PDF</a>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <p class="subtitle" style="margin-bottom:6px;">Ingresos totales (pedidos pagados o entregados)</p>
+    <div style="font-size:2rem;font-weight:700;color:var(--color-primary-dark);">${{ "%.2f"|format(stats.total_ingresos) }}</div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;margin-bottom:14px;">Pedidos por estado</h3>
+    {% if stats.por_estado %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        {% for e in stats.por_estado %}
+          <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:10px;padding:12px 18px;text-align:center;min-width:110px;">
+            <div style="font-size:1.4rem;font-weight:700;">{{ e.n }}</div>
+            <div style="font-size:0.78rem;color:var(--color-muted);text-transform:capitalize;">{{ e.status }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtitle">Todavía no hay pedidos.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;margin-bottom:14px;">Productos más vendidos</h3>
+    {% if stats.top_productos %}
+      <table>
+        <thead><tr><th>Producto</th><th>Unidades vendidas</th></tr></thead>
+        <tbody>
+          {% for p in stats.top_productos %}
+            <tr><td>{{ p.product_name }}</td><td>{{ p.total_qty }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="subtitle">Todavía no hay ventas registradas.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;margin-bottom:14px;">Ventas por mes</h3>
+    {% if stats.por_mes %}
+      <div style="display:flex;align-items:flex-end;gap:16px;height:160px;padding-top:10px;">
+        {% for m in stats.por_mes %}
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+            <div style="font-size:0.72rem;color:var(--color-muted);margin-bottom:4px;">${{ "%.0f"|format(m.total) }}</div>
+            <div style="width:100%;max-width:46px;background:var(--color-primary-dark);border-radius:6px 6px 0 0;height:{{ m.pct }}%;min-height:3px;"></div>
+            <div style="font-size:0.72rem;color:var(--color-muted);margin-top:6px;">{{ m.mes }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtitle">Todavía no hay ventas registradas.</p>
+    {% endif %}
+  </div>
+{% endblock %}

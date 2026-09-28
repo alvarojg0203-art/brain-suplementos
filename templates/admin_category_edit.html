@@ -1,0 +1,37 @@
+{% extends "admin_base.html" %}
+{% block title %}Editar categoría{% endblock %}
+{% block content %}
+  <h1>Editar categoría</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_categories') }}">&larr; Volver a categorías</a></p>
+
+  <div class="card" style="max-width:480px;">
+    <form method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" name="name" required value="{{ category.name }}">
+      </div>
+
+      <div class="form-group" style="width:100px;">
+        <label>Ícono (opcional)</label>
+        <input type="text" name="icon" value="{{ category.icon or '' }}" maxlength="10" placeholder="🥛">
+      </div>
+
+      <div class="form-group">
+        <label>Foto</label>
+        {% if category.image_url %}
+          <img src="{{ category.image_url }}" alt="" style="width:100px;height:100px;object-fit:cover;border-radius:50%;margin-bottom:10px;display:block;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;font-size:0.85rem;margin-bottom:10px;">
+            <input type="checkbox" name="remove_image" value="1" style="width:auto;">
+            Quitar la foto actual (vuelve a mostrar el ícono)
+          </label>
+        {% endif %}
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+        <p style="font-size:0.78rem;color:#8a7a6c;margin-top:6px;">
+          {{ "Subí una foto nueva para reemplazar la actual." if category.image_url else "Todavía no tiene foto — se está mostrando el ícono. Subí una imagen cuadrada para que se vea prolija en la tarjeta." }}
+        </p>
+      </div>
+
+      <button class="btn" type="submit">Guardar cambios</button>
+    </form>
+  </div>
+{% endblock %}

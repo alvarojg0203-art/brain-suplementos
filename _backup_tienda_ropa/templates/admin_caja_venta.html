@@ -1,0 +1,291 @@
+{% extends "admin_base.html" %}
+{% block title %}Nueva venta{% endblock %}
+{% block content %}
+  <h1>Nueva venta presencial</h1>
+  <p class="subtitle"><a href="{{ url_for('admin_caja') }}">&larr; Volver a Caja</a></p>
+
+  <div class="pos-layout">
+    <div class="pos-search-col">
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Buscar producto</h3>
+        <div class="form-group" style="margin-bottom:10px;">
+          <input type="text" id="posSearchInput" placeholder="Nombre del producto, o escaneá el código de barras..."
+                 oninput="posSearchDebounced()" onkeydown="posSearchKeydown(event)" autocomplete="off" autofocus>
+          <p style="font-size:0.76rem;color:#8a7a6c;margin-top:6px;">Mostrando todos los productos activos. Escribí para filtrar por nombre, o escaneá un código de barras (agrega el producto directo).</p>
+        </div>
+        <div class="pos-search-results" id="posResults">
+          <p class="pos-empty">Cargando productos...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pos-cart-col">
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Venta actual</h3>
+        <div id="posCart">
+          <p class="pos-empty">Todavía no agregaste ningún producto.</p>
+        </div>
+        <div class="pos-total">
+          <span>Total</span>
+          <span id="posTotal">$0</span>
+        </div>
+
+        <div class="form-group" style="margin-top:18px;">
+          <label>Medio de pago</label>
+          <select id="posPaymentMethod">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta de débito">Tarjeta de débito</option>
+            <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Mercado Pago">Mercado Pago (QR/otro)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cliente (opcional)</label>
+          <input type="text" id="posCustomerName" placeholder="Ej: María Pérez">
+        </div>
+
+        <button class="btn" style="width:100%;" onclick="posSubmitSale()" id="posSubmitBtn">Confirmar venta e imprimir ticket</button>
+        <p class="pos-empty" id="posError" style="color:#b34747;display:none;"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let posCart = [];
+    let posSearchTimer = null;
+
+    function posSearchDebounced(){
+      clearTimeout(posSearchTimer);
+      posSearchTimer = setTimeout(posSearch, 300);
+    }
+
+    // Al cargar la página, mostramos todos los productos activos (sin
+    // tener que escribir nada) para que se puedan elegir con el mouse.
+    posLoadAll();
+
+    async function posLoadAll(){
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Cargando productos...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar`);
+        posRenderResults(await res.json());
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo cargar el catálogo. Probá de nuevo.</p>`;
+      }
+    }
+
+    async function posSearch(){
+      const q = document.getElementById("posSearchInput").value.trim();
+      if(!q){ posLoadAll(); return; }
+      const results = document.getElementById("posResults");
+      results.innerHTML = `<p class="pos-empty">Buscando...</p>`;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        posRenderResults(data);
+      }catch(err){
+        results.innerHTML = `<p class="pos-empty">No se pudo buscar. Probá de nuevo.</p>`;
+      }
+    }
+
+    // Enter en el buscador = escaneo de código de barras: la lectora
+    // "escribe" el código y manda Enter solita. Probamos primero un
+    // match exacto de código de barras; si no hay ninguno, lo tratamos
+    // como una búsqueda normal por si lo escribió a mano.
+    function posSearchKeydown(event){
+      if(event.key !== "Enter") return;
+      event.preventDefault();
+      posScan();
+    }
+
+    async function posScan(){
+      const input = document.getElementById("posSearchInput");
+      const value = input.value.trim();
+      if(!value) return;
+      try{
+        const res = await fetch(`/admin/api/productos-buscar?codigo=${encodeURIComponent(value)}`);
+        const data = await res.json();
+        if(data.length === 1){
+          posQuickAdd(data[0]);
+          input.value = "";
+          posLoadAll();
+          input.focus();
+          return;
+        }
+      }catch(err){ /* seguimos al fallback de búsqueda por nombre */ }
+      posSearch();
+    }
+
+    // Se usa al escanear un código: si el producto no tiene color/talle
+    // se agrega directo, y si tiene, se muestra el picker para elegir.
+    function posQuickAdd(product){
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+      } else {
+        window._posProducts = [product];
+        posRenderResults([product]);
+        posToggleVariant(0);
+      }
+    }
+
+    function posRenderResults(products){
+      const results = document.getElementById("posResults");
+      if(!products.length){
+        results.innerHTML = `<p class="pos-empty">No se encontró ningún producto activo con ese nombre.</p>`;
+        return;
+      }
+      results.innerHTML = products.map((p, i) => `
+        <div>
+          <div class="pos-search-item" onclick="posToggleVariant(${i})">
+            <img src="${p.image_url || 'https://placehold.co/80x100/eee/999?text=%20'}" alt="">
+            <div class="psi-info">
+              <div class="psi-name">${p.name}</div>
+              <div class="psi-meta">${formatMoney(p.price)} · stock ${p.stock}${p.colors.length ? " (elegí color)" : ""}</div>
+            </div>
+          </div>
+          <div id="posVariant${i}"></div>
+        </div>
+      `).join("");
+      window._posProducts = products;
+    }
+
+    function posToggleVariant(i){
+      const product = window._posProducts[i];
+      const box = document.getElementById(`posVariant${i}`);
+      if(box.innerHTML){ box.innerHTML = ""; return; }
+
+      if(!product.colors.length && !product.sizes.length){
+        posAddToCart(product, null, null);
+        box.innerHTML = "";
+        return;
+      }
+
+      const colorOptions = product.colors.map(c => `<option value="${c.id}">${c.name} (stock ${c.stock})</option>`).join("");
+      const sizeOptions = product.sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+      box.innerHTML = `
+        <div class="pos-variant-picker">
+          ${product.colors.length ? `<select id="posColor${i}" onchange="posUpdateSizesForColor(${i})">${colorOptions}</select>` : ""}
+          <select id="posSize${i}">${sizeOptions}</select>
+          <button class="btn btn-outline btn-sm" onclick="posConfirmVariant(${i})">Agregar</button>
+        </div>
+      `;
+      if(product.colors.length) posUpdateSizesForColor(i);
+    }
+
+    // Si el color elegido tiene sus propios talles (stock por combinación
+    // color+talle), el selector de talle pasa a mostrar esos en vez de los
+    // talles generales del producto.
+    function posUpdateSizesForColor(i){
+      const product = window._posProducts[i];
+      const colorSelect = document.getElementById(`posColor${i}`);
+      const sizeSelect = document.getElementById(`posSize${i}`);
+      if(!colorSelect || !sizeSelect) return;
+      const color = product.colors.find(c => String(c.id) === colorSelect.value);
+      const sizes = (color && color.sizes && color.sizes.length) ? color.sizes : product.sizes;
+      sizeSelect.innerHTML = sizes.map(s => `<option value="${s.id}">${s.name} (stock ${s.stock})</option>`).join("");
+    }
+
+    function posConfirmVariant(i){
+      const product = window._posProducts[i];
+      const colorSelect = document.getElementById(`posColor${i}`);
+      const sizeSelect = document.getElementById(`posSize${i}`);
+      const color = colorSelect ? product.colors.find(c => String(c.id) === colorSelect.value) : null;
+      const sizeList = (color && color.sizes && color.sizes.length) ? color.sizes : product.sizes;
+      const size = (sizeSelect && sizeList.length) ? sizeList.find(s => String(s.id) === sizeSelect.value) : null;
+      posAddToCart(product, color, size);
+      document.getElementById(`posVariant${i}`).innerHTML = "";
+    }
+
+    function posAddToCart(product, color, size){
+      const existing = posCart.find(it =>
+        it.product_id === product.id && it.color_id === (color ? color.id : null) && it.size_id === (size ? size.id : null)
+      );
+      if(existing){ existing.qty += 1; }
+      else{
+        posCart.push({
+          product_id: product.id, name: product.name, unit_price: product.price, qty: 1,
+          color_id: color ? color.id : null, color_name: color ? color.name : null,
+          size_id: size ? size.id : null, size_name: size ? size.name : null,
+        });
+      }
+      posRenderCart();
+    }
+
+    function posChangeQty(index, delta){
+      posCart[index].qty += delta;
+      if(posCart[index].qty <= 0) posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    function posRemove(index){
+      posCart.splice(index, 1);
+      posRenderCart();
+    }
+
+    function posRenderCart(){
+      const box = document.getElementById("posCart");
+      if(!posCart.length){
+        box.innerHTML = `<p class="pos-empty">Todavía no agregaste ningún producto.</p>`;
+      } else {
+        box.innerHTML = posCart.map((it, i) => `
+          <div class="pos-cart-item">
+            <div class="pci-info">
+              <div>${it.name}</div>
+              ${(it.color_name || it.size_name) ? `<div class="pci-variant">${[it.color_name, it.size_name ? "Talle " + it.size_name : null].filter(Boolean).join(" · ")}</div>` : ""}
+              <button class="pci-remove" onclick="posRemove(${i})">Quitar</button>
+            </div>
+            <div class="pci-qty">
+              <button type="button" onclick="posChangeQty(${i}, -1)">-</button>
+              <span>${it.qty}</span>
+              <button type="button" onclick="posChangeQty(${i}, 1)">+</button>
+            </div>
+            <div class="pci-price">${formatMoney(it.unit_price * it.qty)}</div>
+          </div>
+        `).join("");
+      }
+      const total = posCart.reduce((sum, it) => sum + it.unit_price * it.qty, 0);
+      document.getElementById("posTotal").textContent = formatMoney(total);
+    }
+
+    function formatMoney(n){ return "$" + Number(n).toLocaleString("es-AR"); }
+
+    async function posSubmitSale(){
+      const errorEl = document.getElementById("posError");
+      errorEl.style.display = "none";
+      if(!posCart.length){
+        errorEl.textContent = "Agregá al menos un producto.";
+        errorEl.style.display = "block";
+        return;
+      }
+      const btn = document.getElementById("posSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+      try{
+        const res = await fetch(window.location.pathname, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            items: posCart,
+            payment_method: document.getElementById("posPaymentMethod").value,
+            customer_name: document.getElementById("posCustomerName").value,
+          }),
+        });
+        const data = await res.json();
+        if(!res.ok || data.error){
+          errorEl.textContent = data.error || "No se pudo registrar la venta.";
+          errorEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Confirmar venta e imprimir ticket";
+          return;
+        }
+        window.location.href = `/admin/caja/venta/${data.sale_id}/ticket`;
+      }catch(err){
+        errorEl.textContent = "No se pudo conectar con el servidor.";
+        errorEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Confirmar venta e imprimir ticket";
+      }
+    }
+  </script>
+{% endblock %}
