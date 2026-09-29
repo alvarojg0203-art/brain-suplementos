@@ -209,7 +209,7 @@ header{
   content:"";position:absolute;inset:0;background:rgba(20,16,15,0.32);
 }
 .hero-content{position:relative;z-index:1;max-width:560px;}
-.hero h1,.hero-content h1{font-size:3.6rem;font-weight:700;margin-bottom:16px;color:var(--color-dark);}
+.hero h1,.hero-content h1{font-size:3.6rem;font-weight:400;margin-bottom:16px;color:var(--color-dark);}
 .hero p,.hero-content p{font-size:1.1rem;color:var(--color-muted);max-width:560px;margin:0 auto 28px;}
 .hero-slide.has-text .hero-content h1,
 .hero-slide.has-text .hero-content p{color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.3);}
@@ -246,7 +246,7 @@ header{
    todavía no tiene ventas). */
 .most-purchased{padding:44px 24px 10px;}
 .most-purchased h2{
-  text-align:center;font-size:2.1rem;font-weight:700;margin-bottom:26px;color:var(--color-dark);
+  text-align:center;font-size:2.1rem;font-weight:400;margin-bottom:26px;color:var(--color-dark);
 }
 .most-purchased-wrap{
   display:flex;align-items:center;gap:8px;max-width:1400px;margin:0 auto;position:relative;
@@ -281,7 +281,7 @@ header{
 
 /* BANNERS MOTIVACIONALES: imagen grande + mensaje corto superpuesto,
    con flechas para recorrerlos (ej: "Ganar masa muscular"). */
-.goal-banners{padding:16px 24px 50px;background:var(--color-dark);}
+.goal-banners{padding:16px 24px 50px;}
 .goal-banners-wrap{
   display:flex;align-items:center;gap:8px;max-width:1400px;margin:0 auto;position:relative;
 }
@@ -315,10 +315,10 @@ header{
 }
 
 /* CATEGORY STRIP */
-.categories{padding:50px 24px;background:var(--color-dark);}
+.categories{padding:50px 24px;}
 .categories .cat-grid{margin-top:50px;}
 .categories h2, .catalog h2, .about h2, .sets h2{
-  text-align:center;font-size:2.5rem;font-weight:700;margin-bottom:8px;color:var(--color-dark);
+  text-align:center;font-size:2.5rem;font-weight:400;margin-bottom:8px;color:var(--color-dark);
 }
 .section-sub{text-align:center;color:var(--color-muted);margin-bottom:36px;font-size:0.95rem;}
 .cat-grid{
@@ -392,7 +392,7 @@ header{
 .set-item img{width:56px;height:68px;object-fit:cover;border-radius:8px;background:#eee;transition:transform .2s;}
 .set-item:hover img{transform:scale(1.05);}
 .set-item-name{font-size:0.68rem;color:var(--color-muted);line-height:1.2;}
-.set-item-price{font-size:0.72rem;font-weight:700;color:var(--color-primary-dark);}
+.set-item-price{font-size:0.72rem;font-weight:700;color:var(--color-primary);}
 .set-total{font-size:0.9rem;color:var(--color-dark);padding-top:6px;border-top:1px solid var(--color-border);}
 .set-info .btn{margin-top:4px;}
 
@@ -668,7 +668,7 @@ header{
 }
 .stock-notify-msg{font-size:0.78rem;margin:8px 2px 0;min-height:1em;}
 .product-info h4{font-size:1rem;font-weight:600;}
-.product-info .price{font-size:1.15rem;font-weight:800;color:var(--color-primary-dark);margin-top:auto;}
+.product-info .price{font-size:1.15rem;font-weight:800;color:var(--color-primary);margin-top:auto;}
 .product-info .installments-hint{margin-top:1px;}
 .add-btn{
   margin-top:10px;padding:10px;border-radius:8px;background:var(--color-dark);
